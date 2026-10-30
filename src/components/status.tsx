@@ -1,7 +1,7 @@
 export function Status({ status }: { status: string }) {
   if (status === "sent") return <span className="chip chip-ok">Emailed</span>;
   if (status === "failed") return <span className="chip chip-bad">Email failed</span>;
-  return <span className="chip chip-wait">Sending</span>;
+  return <span className="chip chip-wait">Designing</span>;
 }
 
 export function fmtDate(iso: string) {

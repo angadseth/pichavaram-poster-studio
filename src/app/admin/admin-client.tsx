@@ -35,7 +35,7 @@ export function PeopleAdmin({ initial, me }: { initial: Person[]; me: string }) 
 
   return (
     <section className="panel mt-10 p-6">
-      <h2 className="display text-2xl">People who can sign in</h2>
+      <h2 className="display text-3xl">People who can sign in</h2>
       <p className="muted mt-1 text-sm">RCs request posters. Admins also see every request and manage this list.</p>
 
       <div className="mt-6 overflow-x-auto">
@@ -133,16 +133,16 @@ export function HousesAdmin({ initial }: { initial: House[] }) {
 
   return (
     <section className="panel mt-10 p-6">
-      <h2 className="display text-2xl">House logos</h2>
-      <p className="muted mt-1 text-sm">Upload each house&apos;s real logo (PNG with a transparent background works best). Until then a crest with the house initial is used.</p>
+      <h2 className="display text-3xl">House logos</h2>
+      <p className="muted mt-1 text-sm">Each house uses its crest. Upload a new logo to replace it (a square PNG with a transparent background works best).</p>
       <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {initial.map((h) => (
           <li key={h.id} className="tile flex items-center gap-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={h.logo} alt="" width={56} height={56} className="rounded-full bg-[#fffdf8] object-contain p-1" />
+            <img src={h.logo} alt="" width={56} height={56} className="crest" />
             <div className="min-w-0 flex-1">
               <div className="truncate font-semibold">{h.name}</div>
-              <div className="muted text-xs">{h.custom ? "Custom logo" : "Placeholder crest"}</div>
+              <div className="muted text-xs">{h.custom ? "Custom logo" : "House crest"}</div>
               <div className="mt-2 flex gap-2">
                 <label className="btn btn-ghost btn-sm cursor-pointer">
                   {busy === h.id ? "Uploading…" : "Upload"}

@@ -34,15 +34,15 @@ export default async function AdminPage() {
   ];
 
   return (
-    <div className="shell pt-6">
-      <h1 className="display text-4xl sm:text-5xl">Admin</h1>
+    <div className="shell pt-12">
+      <h1 className="display text-[clamp(44px,7vw,88px)]">Admin</h1>
       <p className="muted mt-2">Signed in as {admin.email}</p>
 
       <section className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((s) => (
           <div key={s.label} className="panel p-6">
             <div className="muted text-sm">{s.label}</div>
-            <div className="display mt-2 text-4xl">{s.value}</div>
+            <div className="display gold-text mt-2 text-5xl">{s.value}</div>
           </div>
         ))}
       </section>
@@ -72,7 +72,7 @@ export default async function AdminPage() {
       </section>
 
       <section className="panel mt-10 overflow-x-auto p-6">
-        <h2 className="display text-2xl">All requests</h2>
+        <h2 className="display text-3xl">All requests</h2>
         <table className="table mt-4 min-w-[760px]">
           <thead>
             <tr><th>Poster</th><th>Requested by</th><th>Hosted by</th><th>Event</th><th>When requested</th><th>Status</th></tr>

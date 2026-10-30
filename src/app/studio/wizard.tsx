@@ -1,10 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { EVENT_LABELS, EVENT_TYPES, type EventType, type Mode } from "@/poster/types";
 
 type House = { id: string; name: string; logo: string };
-type Choice = { templateId: string; paletteId: string; seed: number };
 
 const EVENT_BLURBS: Record<EventType, string> = {
   "music-night": "Open mics, jams, karaoke",
@@ -24,7 +24,7 @@ const EVENT_GLYPHS: Record<EventType, string> = {
   others: "M12 5v14M5 12h14",
 };
 
-const STEPS = ["Event", "Houses", "Details", "Preview"];
+const STEPS = ["Event", "Houses", "Details"];
 
 function defaultMode(t: EventType): Mode {
   return t === "meetup" ? "offline" : "online";
@@ -59,23 +59,12 @@ export function Wizard({
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
-  const [preview, setPreview] = useState<{ image: string; choice: Choice } | null>(null);
-  const [seen, setSeen] = useState<string[]>([]);
   const [formError, setFormError] = useState("");
-  const [done, setDone] = useState<{ id: string; status: string; error: string | null } | null>(null);
+  const [sent, setSent] = useState(false);
 
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((p) => ({ ...p, [k]: v }));
   const collab = houses.filter((h) => h.id !== "pichavaram");
   const pichavaram = houses.find((h) => h.id === "pichavaram");
-
-  function input() {
-    return {
-      eventType,
-      ...f,
-      highlights: f.highlights.map((h) => h.trim()).filter(Boolean),
-      houseIds,
-    };
-  }
 
   function pickType(t: EventType) {
     setEventType(t);
@@ -87,111 +76,91 @@ export function Wizard({
     setStep(1);
   }
 
-  async function render(opts: { shuffle?: boolean } = {}) {
-    setBusy(true);
-    setFormError("");
-    const avoid = opts.shuffle && preview ? [...seen, preview.choice.templateId] : [];
-    const res = await fetch("/api/preview", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ input: input(), avoid }),
-    });
-    const data = await res.json().catch(() => ({}));
-    setBusy(false);
-    if (res.status === 401) return void window.location.assign("/login");
-    if (!res.ok) {
-      if (data.errors) {
-        setErrors(data.errors);
-        setStep(2);
-      }
-      setFormError(data.error ?? "Couldn't make the preview.");
-      return;
-    }
-    setErrors({});
-    if (opts.shuffle && preview) setSeen((s) => [...s, preview.choice.templateId].slice(-8));
-    setPreview({ image: data.image, choice: data.choice });
-    setStep(3);
-  }
-
+  // The server answers at once and designs + emails the poster in the background.
   async function send() {
-    if (!preview) return;
     setBusy(true);
     setFormError("");
     const res = await fetch("/api/requests", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ input: input(), choice: preview.choice }),
+      body: JSON.stringify({
+        input: { eventType, ...f, highlights: f.highlights.map((h) => h.trim()).filter(Boolean), houseIds },
+      }),
     });
     const data = await res.json().catch(() => ({}));
     setBusy(false);
     if (res.status === 401) return void window.location.assign("/login");
     if (!res.ok) {
-      if (data.errors) {
-        setErrors(data.errors);
-        setStep(2);
-      }
-      setFormError(data.error ?? "Couldn't send the request.");
+      setErrors(data.errors ?? {});
+      setFormError(data.error ?? "Couldn't send the request. Try again.");
       return;
     }
-    setDone(data);
+    setSent(true);
+    window.scrollTo({ top: 0 });
   }
 
-  if (done) {
-    const ok = done.status === "sent";
+  if (sent) {
     return (
-      <div className="mx-auto grid max-w-4xl items-center gap-10 py-6 md:grid-cols-[320px_1fr]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        {preview ? <img src={preview.image} alt="Your poster" className="w-full rounded-2xl shadow-2xl" /> : null}
-        <div>
-          <h1 className="display text-5xl">{ok ? "Sent. Check your inbox." : "Your poster is ready"}</h1>
-          <p className="muted mt-4 text-lg leading-relaxed">
-            {ok
-              ? `The full-size poster is on its way to ${defaults.email}. It usually arrives within a minute.`
-              : "The email didn't go through, but the poster is saved. Download it below or retry the email from My posters."}
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <a className="btn btn-brass" href={`/api/posters/${done.id}?download=1`}>Download PNG</a>
-            <a className="btn btn-ghost" href={`/requests/${done.id}`}>View request</a>
-            <button className="btn btn-ghost" onClick={() => window.location.reload()}>Make another poster</button>
-          </div>
+      <section className="mx-auto flex max-w-2xl flex-col items-center pt-10 text-center">
+        <div className="envelope" aria-hidden>
+          <div className="envelope__body" />
+          <div className="envelope__flap" />
+          <div className="envelope__seal" />
         </div>
-      </div>
+        <h1 className="display mt-12 text-[clamp(44px,7vw,80px)]">
+          It&apos;s on its <em>way</em>
+        </h1>
+        <p className="muted mt-5 max-w-lg text-lg leading-relaxed">
+          The studio is designing your <strong className="font-medium text-[var(--ivory)]">{f.title}</strong> poster. You&apos;ll
+          get it at <strong className="font-medium text-[var(--ivory)]">{defaults.email}</strong> within a minute. You can
+          close this page.
+        </p>
+        <div className="countdown mt-10 w-full max-w-sm" aria-hidden><i /></div>
+        <div className="mt-10 flex flex-wrap justify-center gap-3">
+          <Link className="btn btn-brass" href="/requests">See my posters</Link>
+          <button className="btn btn-ghost" onClick={() => window.location.reload()}>Make another poster</button>
+        </div>
+      </section>
     );
   }
 
   return (
     <div className="mx-auto max-w-5xl">
-      <ol className="mb-10 flex flex-wrap items-center gap-2 text-sm" aria-label="Steps">
-        {STEPS.map((s, i) => {
-          const reachable = i <= step || (i === 1 && eventType) || (i === 2 && eventType);
-          return (
-            <li key={s} className="flex items-center gap-2">
-              <button
-                className={`rounded-full px-4 py-2 transition ${i === step ? "bg-[var(--brass)] text-[#1b1408]" : reachable ? "text-[var(--pearl)] hover:bg-white/5" : "text-[var(--mist)] opacity-50"}`}
-                disabled={!reachable || busy}
-                aria-current={i === step ? "step" : undefined}
-                onClick={() => (i === 3 ? render() : setStep(i))}
-              >
-                {i + 1}. {s}
-              </button>
-              {i < STEPS.length - 1 ? <span className="h-px w-6 bg-[var(--line)]" aria-hidden /> : null}
-            </li>
-          );
-        })}
-      </ol>
+      <div className="mb-12">
+        <div className="steps" aria-hidden>
+          {STEPS.map((s, i) => <i key={s} data-on={i <= step} />)}
+        </div>
+        <ol className="mt-4 flex gap-6 text-sm" aria-label="Steps">
+          {STEPS.map((s, i) => {
+            const reachable = i === 0 || Boolean(eventType);
+            return (
+              <li key={s}>
+                <button
+                  className={`transition ${i === step ? "text-[var(--gold-hi)]" : reachable ? "text-[var(--ivory-2)] hover:text-[var(--ivory)]" : "text-[var(--mute-2)]"}`}
+                  disabled={!reachable || busy}
+                  aria-current={i === step ? "step" : undefined}
+                  onClick={() => setStep(i)}
+                >
+                  {i + 1}. {s}
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
 
       {step === 0 ? (
         <section>
-          <h1 className="display text-4xl sm:text-5xl">What are you hosting?</h1>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <h1 className="display text-[clamp(40px,6vw,72px)]">What are you hosting?</h1>
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {EVENT_TYPES.map((t) => (
-              <button key={t} className="tile" aria-pressed={eventType === t} onClick={() => pickType(t)}>
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#c9a15a" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <button key={t} className="tile min-h-[170px]" aria-pressed={eventType === t} onClick={() => pickType(t)}>
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#d6b36f" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <path d={EVENT_GLYPHS[t]} />
                 </svg>
-                <div className="mt-4 text-lg font-semibold">{EVENT_LABELS[t]}</div>
+                <div className="display mt-6 text-[32px]">{EVENT_LABELS[t]}</div>
                 <div className="muted mt-1 text-sm">{EVENT_BLURBS[t]}</div>
-                <div className="mt-3 text-xs text-[var(--brass-soft)]">{t === "meetup" ? "Offline" : t === "others" ? "Online or offline" : "Online"}</div>
+                <div className="mono mt-4 text-[var(--gold)]">{t === "meetup" ? "Offline" : t === "others" ? "Online or offline" : "Online"}</div>
               </button>
             ))}
           </div>
@@ -200,15 +169,15 @@ export function Wizard({
 
       {step === 1 ? (
         <section>
-          <h1 className="display text-4xl sm:text-5xl">Which houses are collaborating?</h1>
-          <p className="muted mt-3">Pichavaram is always included. Pick none for a Pichavaram-only event.</p>
-          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <h1 className="display text-[clamp(40px,6vw,72px)]">Who&apos;s collaborating?</h1>
+          <p className="muted mt-3">Pichavaram is always on the poster. Pick none for a Pichavaram-only event.</p>
+          <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {pichavaram ? (
               <div className="tile flex items-center gap-4" aria-checked="true" role="checkbox" aria-disabled="true">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={pichavaram.logo} alt="" width={44} height={44} className="rounded-full" />
+                <img src={pichavaram.logo} alt="" width={52} height={52} className="crest" />
                 <div>
-                  <div className="font-semibold">{pichavaram.name}</div>
+                  <div className="display text-2xl">{pichavaram.name}</div>
                   <div className="muted text-xs">Host house</div>
                 </div>
               </div>
@@ -224,13 +193,13 @@ export function Wizard({
                   onClick={() => setHouseIds((ids) => (on ? ids.filter((x) => x !== h.id) : [...ids, h.id]))}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={h.logo} alt="" width={44} height={44} className="rounded-full" />
-                  <span className="font-semibold">{h.name}</span>
+                  <img src={h.logo} alt="" width={52} height={52} className="crest" />
+                  <span className="display text-2xl">{h.name}</span>
                 </button>
               );
             })}
           </div>
-          <div className="mt-10 flex justify-between">
+          <div className="mt-12 flex justify-between">
             <button className="btn btn-ghost" onClick={() => setStep(0)}>Back</button>
             <button className="btn btn-brass" onClick={() => setStep(2)}>
               Continue with {houseIds.length + 1} {houseIds.length ? "houses" : "house"}
@@ -241,13 +210,13 @@ export function Wizard({
 
       {step === 2 && eventType ? (
         <section>
-          <h1 className="display text-4xl sm:text-5xl">The details</h1>
-          <p className="muted mt-3">This is what goes on the poster. Keep it short, posters read best with few words.</p>
+          <h1 className="display text-[clamp(40px,6vw,72px)]">The details</h1>
+          <p className="muted mt-3">This is what goes on the poster. Keep it short; posters read best with few words.</p>
           <form
-            className="mt-8 grid gap-6 md:grid-cols-2"
+            className="mt-10 grid gap-6 md:grid-cols-2"
             onSubmit={(e) => {
               e.preventDefault();
-              render();
+              send();
             }}
           >
             <Field label="Event title" error={errors.title} className="md:col-span-2" hint="Up to 60 characters">
@@ -305,35 +274,14 @@ export function Wizard({
               <input className="input" maxLength={60} required value={f.hostName} onChange={(e) => set("hostName", e.target.value)} placeholder="Your name" aria-invalid={Boolean(errors.hostName)} />
             </Field>
             {formError ? <p className="text-sm text-[var(--danger)] md:col-span-2" role="alert">{formError}</p> : null}
-            <div className="flex justify-between md:col-span-2">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[var(--line)] pt-6 md:col-span-2">
               <button type="button" className="btn btn-ghost" onClick={() => setStep(1)}>Back</button>
-              <button className="btn btn-brass" disabled={busy}>{busy ? "Designing your poster…" : "Preview poster"}</button>
+              <div className="flex flex-wrap items-center gap-4">
+                <span className="muted text-sm">Emailed to {defaults.email}</span>
+                <button className="btn btn-brass" disabled={busy}>{busy ? "Sending…" : "Create my poster"}</button>
+              </div>
             </div>
           </form>
-        </section>
-      ) : null}
-
-      {step === 3 ? (
-        <section className="grid items-start gap-10 md:grid-cols-[minmax(0,460px)_1fr]">
-          <div className={`relative aspect-[4/5] w-full overflow-hidden rounded-2xl ${busy ? "shimmer" : ""}`}>
-            {preview ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={preview.image} alt="Poster preview" className={`h-full w-full transition-opacity duration-300 ${busy ? "opacity-40" : ""}`} />
-            ) : null}
-          </div>
-          <div>
-            <h1 className="display text-4xl sm:text-5xl">Here&apos;s your poster</h1>
-            <p className="muted mt-4 leading-relaxed">
-              Not feeling it? Try another design, as many times as you like. When it looks right, send it and the full-size
-              PNG goes to <strong className="text-[var(--pearl)]">{defaults.email}</strong>.
-            </p>
-            {formError ? <p className="mt-4 text-sm text-[var(--danger)]" role="alert">{formError}</p> : null}
-            <div className="mt-8 flex flex-wrap gap-3">
-              <button className="btn btn-brass" disabled={busy || !preview} onClick={send}>{busy ? "Working…" : "Send poster to my email"}</button>
-              <button className="btn btn-ghost" disabled={busy} onClick={() => render({ shuffle: true })}>Try another design</button>
-              <button className="btn btn-ghost" disabled={busy} onClick={() => setStep(2)}>Edit details</button>
-            </div>
-          </div>
         </section>
       ) : null}
     </div>

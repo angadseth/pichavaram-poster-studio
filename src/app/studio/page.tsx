@@ -9,7 +9,7 @@ export default async function StudioPage() {
   const user = await requireUser();
   const houses = (await listHouses()).map(({ id, name, logo }) => ({ id, name, logo }));
   return (
-    <div className="shell pt-6">
+    <div className="shell pt-12">
       <Wizard houses={houses} defaults={{ hostName: user.name, region: user.region, email: user.email }} today={todayIST()} />
     </div>
   );
