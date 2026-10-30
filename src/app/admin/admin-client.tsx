@@ -98,7 +98,7 @@ export function PeopleAdmin({ initial, me }: { initial: Person[]; me: string }) 
           <h3 className="font-semibold">Import many at once</h3>
           <textarea
             className="input min-h-[150px]"
-            placeholder={"One per line: email, name, region\n24f1000001@ds.study.iitm.ac.in, Asha, Chandigarh Region"}
+            placeholder={"One per line: email, name, region, role (rc or designer)\n24f1000001@ds.study.iitm.ac.in, Asha, Chandigarh Region\n24f1000002@ds.study.iitm.ac.in, Ravi, , designer"}
             value={bulk}
             onChange={(e) => setBulk(e.target.value)}
           />
