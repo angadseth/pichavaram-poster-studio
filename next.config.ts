@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactCompiler: true,
   // Native / fs-heavy packages stay out of the bundle.
-  serverExternalPackages: ["@resvg/resvg-js", "@libsql/client", "satori", "nodemailer"],
+  serverExternalPackages: ["@resvg/resvg-js", "@libsql/client", "satori", "nodemailer", "sharp"],
   // Poster fonts are read from disk at runtime; ship them with every server route.
   outputFileTracingIncludes: {
     "/**": ["./assets/fonts/**/*"],

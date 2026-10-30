@@ -84,8 +84,10 @@ export function Logos({
   const n = houses.length;
   const perRow = n <= 6 ? n : Math.ceil(n / 2);
   const size = Math.max(54, Math.min(max, Math.floor((width - gap * (perRow - 1)) / perRow)));
+  // shrink-wrap to exactly perRow plates so rows come out balanced (5+5, not 7+3)
+  const rowWidth = Math.min(width, perRow * size + gap * (perRow - 1));
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", justifyContent: justify, gap, width }}>
+    <div style={{ display: "flex", flexWrap: "wrap", justifyContent: justify, gap, width: rowWidth }}>
       {houses.map((h) => (
         <div
           key={h.name}
@@ -95,6 +97,7 @@ export function Logos({
             borderRadius: size,
             background: plate,
             border: `2px solid ${ring}`,
+            boxSizing: "border-box",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",

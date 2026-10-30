@@ -1,6 +1,7 @@
 import { Resvg } from "@resvg/resvg-js";
 import QRCode from "qrcode";
 import satori from "satori";
+import sharp from "sharp";
 import { loadFonts } from "./fonts";
 import { getTemplate } from "./registry";
 import type { Choice, PosterData, RenderCtx } from "./types";
@@ -42,14 +43,24 @@ export async function renderSvg(data: PosterData, choice: Choice): Promise<strin
   });
 }
 
-export async function renderPoster(data: PosterData, choice: Choice): Promise<{ png: Buffer; ms: number }> {
+export type RenderOptions = { width?: number; format?: "png" | "jpeg" };
+
+export async function renderPoster(
+  data: PosterData,
+  choice: Choice,
+  opts: RenderOptions = {},
+): Promise<{ png: Buffer; ms: number; mime: string }> {
   const t0 = performance.now();
   const svg = await renderSvg(data, choice);
-  const png = new Resvg(svg, {
-    fitTo: { mode: "width", value: POSTER_W },
+  const raster = new Resvg(svg, {
+    fitTo: { mode: "width", value: opts.width ?? POSTER_W },
     font: { loadSystemFonts: false },
   })
     .render()
     .asPng();
-  return { png: Buffer.from(png), ms: Math.round(performance.now() - t0) };
+  const png =
+    opts.format === "jpeg"
+      ? await sharp(raster).jpeg({ quality: 86, mozjpeg: true }).toBuffer()
+      : Buffer.from(raster);
+  return { png, ms: Math.round(performance.now() - t0), mime: opts.format === "jpeg" ? "image/jpeg" : "image/png" };
 }

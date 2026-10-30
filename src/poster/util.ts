@@ -72,7 +72,7 @@ export function fmtTime(hhmm: string): string {
   return `${h12}:${String(m).padStart(2, "0")} ${suffix}`;
 }
 
-export function describeWhen(d: PosterData): RenderCtx["when"] {
+export function describeWhen(d: Pick<PosterData, "date" | "startTime" | "endTime">): RenderCtx["when"] {
   const [y, mo, da] = d.date.split("-").map(Number);
   const dt = new Date(Date.UTC(y, mo - 1, da));
   const time = fmtTime(d.startTime);
@@ -94,7 +94,10 @@ export function linkLabel(url?: string): string | undefined {
   return url.replace(/^https?:\/\//, "").replace(/\/$/, "");
 }
 
-/** Film-grain overlay; resvg renders feTurbulence natively. */
+/**
+ * Film-grain overlay. Noise is computed on one 240px tile and repeated:
+ * a full-canvas feTurbulence costs ~2.3s in resvg, the tile ~150ms.
+ */
 export function grainSvg(w: number, h: number, opacity = 0.18, freq = 0.85): string {
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="${freq}" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(#n)" opacity="${opacity}"/></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><defs><filter id="n" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="${freq}" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><pattern id="t" width="240" height="240" patternUnits="userSpaceOnUse"><rect width="240" height="240" filter="url(#n)"/></pattern></defs><rect width="100%" height="100%" fill="url(#t)" opacity="${opacity}"/></svg>`;
 }
