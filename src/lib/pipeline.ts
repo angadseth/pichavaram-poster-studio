@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import sharp from "sharp";
-import { placeholderLogo } from "@/poster/house-logos";
+import { houseLogo } from "@/poster/house-logos";
 import { renderPoster } from "@/poster/render";
 import { isEligible, newSeed, selectTemplate } from "@/poster/select";
 import type { Choice, PosterData, PosterHouse } from "@/poster/types";
@@ -19,7 +19,7 @@ export async function listHouses(): Promise<House[]> {
     id: String(row.id),
     name: String(row.name),
     color: String(row.color),
-    logo: row.logo ? String(row.logo) : placeholderLogo(String(row.name), String(row.color)),
+    logo: row.logo ? String(row.logo) : houseLogo(String(row.id), String(row.name), String(row.color)),
     custom: Boolean(row.logo),
   }));
 }
@@ -189,7 +189,6 @@ export async function createRequest(
   user: User,
   input: RequestInput,
   want: Partial<Choice>,
-  appUrl?: string,
 ): Promise<RequestRow> {
   await ensureSchema();
   const choice = await resolveChoice(await toPosterData(input), user.email, want, input.notes);
@@ -216,7 +215,7 @@ export async function createRequest(
       req.hostName, req.notes, req.templateId, req.paletteId, req.seed, req.createdAt,
     ],
   });
-  return deliver(req, appUrl);
+  return req;
 }
 
 export async function getThumb(id: string): Promise<Buffer | null> {

@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["@resvg/resvg-js", "@libsql/client", "satori", "nodemailer", "sharp"],
   // Poster fonts are read from disk at runtime; ship them with every server route.
   outputFileTracingIncludes: {
-    "/**": ["./assets/fonts/**/*"],
+    "/**": ["./assets/fonts/**/*", "./assets/houses/**/*"],
   },
   turbopack: {
     rules: {

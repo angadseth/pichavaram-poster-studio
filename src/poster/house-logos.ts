@@ -1,4 +1,5 @@
 import { Resvg } from "@resvg/resvg-js";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fontDir } from "./fonts";
 
@@ -48,6 +49,18 @@ export function placeholderLogo(name: string, color: string): string {
     .render()
     .asPng();
   const uri = `data:image/png;base64,${Buffer.from(png).toString("base64")}`;
+  cache.set(key, uri);
+  return uri;
+}
+
+/** The house's real crest from assets/houses/<id>.png when we have one, else the placeholder crest. */
+export function houseLogo(id: string, name: string, color: string): string {
+  const key = `crest|${id}`;
+  const hit = cache.get(key);
+  if (hit) return hit;
+  const file = path.join(process.cwd(), "assets", "houses", `${id}.png`);
+  if (!existsSync(file)) return placeholderLogo(name, color);
+  const uri = `data:image/png;base64,${readFileSync(file).toString("base64")}`;
   cache.set(key, uri);
   return uri;
 }

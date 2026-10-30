@@ -1,6 +1,7 @@
 import { appUrl, fail, guard, json, readChoice, readJson } from "@/lib/api";
 import { db } from "@/lib/db";
-import { createRequest, listRequests } from "@/lib/pipeline";
+import { after } from "next/server";
+import { createRequest, deliver, listRequests } from "@/lib/pipeline";
 import { parseRequest } from "@/lib/validation";
 
 export const maxDuration = 60;
@@ -27,6 +28,9 @@ export async function POST(req: Request) {
   });
   if (Number(recent.rows[0].n) >= DAILY_LIMIT) return fail(429, "Daily limit reached. Try again tomorrow.");
 
-  const r = await createRequest(user, parsed.data, readChoice(body?.choice), appUrl(req));
-  return json({ id: r.id, status: r.status, error: r.error ? "The poster was made but the email failed. You can retry." : null });
+  const r = await createRequest(user, parsed.data, readChoice(body?.choice));
+  // Render and email after the response, so the requester isn't kept waiting on the page.
+  const base = appUrl(req);
+  after(() => deliver(r, base));
+  return json({ id: r.id, status: r.status }, 202);
 }

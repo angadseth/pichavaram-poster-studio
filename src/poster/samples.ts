@@ -1,8 +1,8 @@
-import { DEFAULT_HOUSES, placeholderLogo } from "./house-logos";
+import { DEFAULT_HOUSES, houseLogo } from "./house-logos";
 import type { EventType, PosterData, PosterHouse } from "./types";
 
 export function sampleHouses(n: number): PosterHouse[] {
-  return DEFAULT_HOUSES.slice(0, n).map((h) => ({ name: h.name, logo: placeholderLogo(h.name, h.color) }));
+  return DEFAULT_HOUSES.slice(0, n).map((h) => ({ name: h.name, logo: houseLogo(h.id, h.name, h.color) }));
 }
 
 const BASE: Record<EventType, Omit<PosterData, "houses">> = {

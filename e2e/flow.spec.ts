@@ -76,7 +76,11 @@ test("full RC journey: allowlist → OTP → preview → poster email → downlo
   // send the previewed design, timed against the one-minute promise
   const t0 = Date.now();
   const made = await (await rc.post("/api/requests", { data: { input, choice: p2.choice } })).json();
-  expect(made.status).toBe("sent");
+  expect(made.status).toBe("pending"); // answers at once; render + email run after the response
+  expect(Date.now() - t0).toBeLessThan(5_000);
+  await expect
+    .poll(async () => (await (await rc.get("/api/requests")).json())[0].status, { timeout: 60_000 })
+    .toBe("sent");
   expect(Date.now() - t0).toBeLessThan(60_000);
   const mail = (await mails()).find((m) => m.to === RC && m.subject.includes("poster is ready"));
   expect(mail.attachments.map((a: { contentType: string }) => a.contentType)).toEqual(["image/jpeg", "image/png"]);
