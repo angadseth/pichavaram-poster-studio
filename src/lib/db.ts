@@ -7,7 +7,7 @@ let client: Client | null = null;
 let schemaReady: Promise<void> | null = null;
 
 function databaseUrl(): string {
-  const url = process.env.DATABASE_URL;
+  const url = process.env.DATABASE_URL ?? process.env.TURSO_DATABASE_URL;
   if (url) {
     // local SQLite files need their folder to exist
     if (url.startsWith("file:") && !url.includes(":memory:")) mkdirSync(path.dirname(path.resolve(url.slice(5))), { recursive: true });
@@ -21,7 +21,7 @@ function databaseUrl(): string {
 
 export function db(): Client {
   if (!client) {
-    client = createClient({ url: databaseUrl(), authToken: process.env.DATABASE_AUTH_TOKEN });
+    client = createClient({ url: databaseUrl(), authToken: process.env.DATABASE_AUTH_TOKEN ?? process.env.TURSO_AUTH_TOKEN });
   }
   return client;
 }
