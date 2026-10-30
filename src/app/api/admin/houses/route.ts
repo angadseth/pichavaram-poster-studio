@@ -1,7 +1,7 @@
 import sharp from "sharp";
 import { fail, guard, json, readJson } from "@/lib/api";
 import { db, ensureSchema } from "@/lib/db";
-import { listHouses } from "@/lib/pipeline";
+import { listHouses } from "@/lib/requests";
 
 const MAX_UPLOAD = 2 * 1024 * 1024;
 

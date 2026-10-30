@@ -8,22 +8,17 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "e2e": "playwright test",
-    "gallery": "tsx scripts/render-gallery.ts",
-    "showcase": "tsx scripts/build-showcase.ts"
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",
     "@neon-rs/load": "^0.0.4",
-    "@resvg/resvg-js": "^2.6.2",
     "detect-libc": "^2.0.2",
     "jose": "^6.2.14",
     "next": "16.4.3",
     "nodemailer": "^10.3.1",
-    "qrcode": "^1.5.4",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "satori": "^0.63.2",
     "sharp": "^0.35.5",
     "zod": "^4.6.7"
   },
@@ -32,7 +27,6 @@
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^24.19.2",
     "@types/nodemailer": "^8.0.2",
-    "@types/qrcode": "^1.5.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",

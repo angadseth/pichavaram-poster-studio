@@ -1,7 +1,7 @@
 import { createClient, type Client } from "@libsql/client";
 import { mkdirSync } from "node:fs";
 import path from "node:path";
-import { DEFAULT_HOUSES } from "@/poster/house-logos";
+import { DEFAULT_HOUSES } from "./houses";
 
 let client: Client | null = null;
 let schemaReady: Promise<void> | null = null;
@@ -32,12 +32,14 @@ export function setDbForTests(c: Client) {
   schemaReady = null;
 }
 
+// v2: people can be RCs, designers or admins; requests are designed by a person, not generated.
+// (The v1 tables `users` and `requests` are left in place; `people` is seeded from `users` once.)
 const SCHEMA = [
-  `CREATE TABLE IF NOT EXISTS users (
+  `CREATE TABLE IF NOT EXISTS people (
     email TEXT PRIMARY KEY,
     name TEXT NOT NULL DEFAULT '',
     region TEXT NOT NULL DEFAULT '',
-    role TEXT NOT NULL DEFAULT 'rc' CHECK (role IN ('rc','admin')),
+    role TEXT NOT NULL DEFAULT 'rc' CHECK (role IN ('rc','designer','admin')),
     active INTEGER NOT NULL DEFAULT 1,
     created_at INTEGER NOT NULL
   )`,
@@ -55,7 +57,7 @@ const SCHEMA = [
     logo TEXT,
     sort INTEGER NOT NULL DEFAULT 0
   )`,
-  `CREATE TABLE IF NOT EXISTS requests (
+  `CREATE TABLE IF NOT EXISTS poster_requests (
     id TEXT PRIMARY KEY,
     email TEXT NOT NULL,
     event_type TEXT NOT NULL,
@@ -63,17 +65,18 @@ const SCHEMA = [
     input_json TEXT NOT NULL,
     host_name TEXT NOT NULL,
     notes TEXT NOT NULL DEFAULT '',
-    template_id TEXT NOT NULL,
-    palette_id TEXT NOT NULL,
-    seed INTEGER NOT NULL,
-    status TEXT NOT NULL CHECK (status IN ('pending','sent','failed')),
-    error TEXT,
-    render_ms INTEGER,
+    status TEXT NOT NULL DEFAULT 'new' CHECK (status IN ('new','assigned','delivered')),
+    assignee TEXT,
+    assigned_at INTEGER,
+    poster TEXT,
+    poster_mime TEXT,
     thumb TEXT,
-    created_at INTEGER NOT NULL,
-    sent_at INTEGER
+    delivered_at INTEGER,
+    mail_error TEXT,
+    created_at INTEGER NOT NULL
   )`,
-  `CREATE INDEX IF NOT EXISTS requests_email ON requests (email, created_at DESC)`,
+  `CREATE INDEX IF NOT EXISTS poster_requests_email ON poster_requests (email, created_at DESC)`,
+  `CREATE INDEX IF NOT EXISTS poster_requests_assignee ON poster_requests (assignee, status)`,
 ];
 
 export function ensureSchema(): Promise<void> {
@@ -81,6 +84,12 @@ export function ensureSchema(): Promise<void> {
     schemaReady = (async () => {
       const c = db();
       await c.batch(SCHEMA, "write");
+      const legacy = await c.execute("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'users'");
+      if (legacy.rows.length) {
+        await c.execute(
+          "INSERT OR IGNORE INTO people (email, name, region, role, active, created_at) SELECT email, name, region, role, active, created_at FROM users",
+        );
+      }
       const now = Date.now();
       await c.batch(
         DEFAULT_HOUSES.map((h, i) => ({
@@ -96,7 +105,7 @@ export function ensureSchema(): Promise<void> {
       if (admins.length) {
         await c.batch(
           admins.map((email) => ({
-            sql: `INSERT INTO users (email, name, region, role, active, created_at) VALUES (?, '', '', 'admin', 1, ?)
+            sql: `INSERT INTO people (email, name, region, role, active, created_at) VALUES (?, '', '', 'admin', 1, ?)
                   ON CONFLICT(email) DO UPDATE SET role = 'admin', active = 1`,
             args: [email, now],
           })),

@@ -1,14 +1,8 @@
-export function Status({ status }: { status: string }) {
-  if (status === "sent") return <span className="chip chip-ok">Emailed</span>;
-  if (status === "failed") return <span className="chip chip-bad">Email failed</span>;
-  return <span className="chip chip-wait">Designing</span>;
-}
+import type { Status as S } from "@/lib/requests";
 
-export function fmtDate(iso: string) {
-  const [y, m, d] = iso.split("-").map(Number);
-  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
-}
+const LABEL: Record<S, string> = { new: "Received", assigned: "In design", delivered: "Delivered" };
+const TONE: Record<S, string> = { new: "chip-wait", assigned: "chip-wait", delivered: "chip-ok" };
 
-export function fmtStamp(ms: number) {
-  return new Date(ms).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata" });
+export function Status({ status }: { status: S }) {
+  return <span className={`chip ${TONE[status]}`}>{LABEL[status]}</span>;
 }

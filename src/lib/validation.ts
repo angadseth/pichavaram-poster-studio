@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { EVENT_TYPES, type EventType, type Mode } from "@/poster/types";
+import { EVENT_TYPES, type EventType, type Mode } from "./events";
 
 export const LIMITS = {
   title: 60,

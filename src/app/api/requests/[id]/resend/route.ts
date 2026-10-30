@@ -1,14 +1,14 @@
 import { appUrl, fail, guard, json } from "@/lib/api";
-import { canView, deliver, getRequest } from "@/lib/pipeline";
+import { canDeliver, getRequest, mailPoster } from "@/lib/requests";
 
-export const maxDuration = 60;
-
+/** Email the delivered poster to the RC again. */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await guard();
   if (user instanceof Response) return user;
   const { id } = await params;
-  const row = await getRequest(id);
-  if (!row || !canView(user, row)) return fail(404, "Request not found.");
-  const r = await deliver(row, appUrl(req));
-  return r.status === "sent" ? json({ ok: true }) : fail(502, "Email failed again. Please try later.");
+  const r = await getRequest(id);
+  if (!r || !(canDeliver(user, r) || r.email === user.email)) return fail(404, "Request not found.");
+  if (!r.hasPoster) return fail(400, "No poster uploaded yet.");
+  const { mailed } = await mailPoster(r, appUrl(req));
+  return mailed ? json({ ok: true }) : fail(502, "The email didn't go through. Try again in a minute.");
 }

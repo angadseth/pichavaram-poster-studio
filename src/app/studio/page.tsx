@@ -1,4 +1,4 @@
-import { listHouses } from "@/lib/pipeline";
+import { listHouses } from "@/lib/requests";
 import { requireUser } from "@/lib/session";
 import { todayIST } from "@/lib/validation";
 import { Wizard } from "./wizard";

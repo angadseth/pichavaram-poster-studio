@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { EVENT_LABELS, EVENT_TYPES, type EventType, type Mode } from "@/poster/types";
+import { EVENT_LABELS, EVENT_TYPES, type EventType, type Mode } from "@/lib/events";
 
 type House = { id: string; name: string; logo: string };
 
@@ -76,7 +76,6 @@ export function Wizard({
     setStep(1);
   }
 
-  // The server answers at once and designs + emails the poster in the background.
   async function send() {
     setBusy(true);
     setFormError("");
@@ -108,17 +107,16 @@ export function Wizard({
           <div className="envelope__seal" />
         </div>
         <h1 className="display mt-12 text-[clamp(44px,7vw,80px)]">
-          It&apos;s on its <em>way</em>
+          Request <em>sent</em>
         </h1>
         <p className="muted mt-5 max-w-lg text-lg leading-relaxed">
-          The studio is designing your <strong className="font-medium text-[var(--ivory)]">{f.title}</strong> poster. You&apos;ll
-          get it at <strong className="font-medium text-[var(--ivory)]">{defaults.email}</strong> within a minute. You can
-          close this page.
+          The Pichavaram design team has your <strong className="font-medium text-[var(--ivory)]">{f.title}</strong> brief. The
+          finished poster comes to <strong className="font-medium text-[var(--ivory)]">{defaults.email}</strong> as soon as
+          it&apos;s ready. You can close this page.
         </p>
-        <div className="countdown mt-10 w-full max-w-sm" aria-hidden><i /></div>
         <div className="mt-10 flex flex-wrap justify-center gap-3">
-          <Link className="btn btn-brass" href="/requests">See my posters</Link>
-          <button className="btn btn-ghost" onClick={() => window.location.reload()}>Make another poster</button>
+          <Link className="btn btn-brass" href="/requests">Track my requests</Link>
+          <button className="btn btn-ghost" onClick={() => window.location.reload()}>Request another poster</button>
         </div>
       </section>
     );
@@ -211,7 +209,7 @@ export function Wizard({
       {step === 2 && eventType ? (
         <section>
           <h1 className="display text-[clamp(40px,6vw,72px)]">The details</h1>
-          <p className="muted mt-3">This is what goes on the poster. Keep it short; posters read best with few words.</p>
+          <p className="muted mt-3">Everything the designer needs. Keep the wording short; posters read best with few words.</p>
           <form
             className="mt-10 grid gap-6 md:grid-cols-2"
             onSubmit={(e) => {
@@ -251,7 +249,7 @@ export function Wizard({
               </Field>
             ) : null}
             {f.mode === "online" ? (
-              <Field label="Meeting link" error={errors.meetLink || errors.mode} className="md:col-span-2" hint="A QR code for this link is printed on the poster">
+              <Field label="Meeting link" error={errors.meetLink || errors.mode} className="md:col-span-2" hint="Printed on the poster, usually as a QR code">
                 <input className="input" type="url" required value={f.meetLink} onChange={(e) => set("meetLink", e.target.value)} placeholder="https://meet.google.com/abc-defg-hij" aria-invalid={Boolean(errors.meetLink)} />
               </Field>
             ) : (
@@ -259,7 +257,7 @@ export function Wizard({
                 <input className="input" maxLength={80} required value={f.venue} onChange={(e) => set("venue", e.target.value)} placeholder="Sukhna Lake, Sector 1, Chandigarh" aria-invalid={Boolean(errors.venue)} />
               </Field>
             )}
-            <Field label="Highlights (optional, up to 4)" error={errors.highlights} className="md:col-span-2" hint="Short phrases shown as tags, like Open Mic or Prizes">
+            <Field label="Highlights (optional, up to 4)" error={errors.highlights} className="md:col-span-2" hint="Short phrases for the poster, like Open Mic or Prizes">
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 {f.highlights.map((h, i) => (
                   <input key={i} className="input" maxLength={24} value={h} placeholder={["Open Mic", "Prizes", "Quiz", "Goodies"][i]}
@@ -267,7 +265,7 @@ export function Wizard({
                 ))}
               </div>
             </Field>
-            <Field label="What should the poster feel like? (optional)" error={errors.notes} className="md:col-span-2" hint="Words like retro, elegant, chill or quiz help the studio pick a design">
+            <Field label="Anything the designer should know? (optional)" error={errors.notes} className="md:col-span-2" hint="The feel you want, colours, a theme, a reference poster">
               <textarea className="input" maxLength={500} value={f.notes} onChange={(e) => set("notes", e.target.value)} placeholder="Retro vibe, Bollywood theme, keep it classy…" />
             </Field>
             <Field label="Who is hosting?" error={errors.hostName} className="md:col-span-2" hint="Kept in the records only. It is not printed on the poster.">
@@ -277,8 +275,8 @@ export function Wizard({
             <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[var(--line)] pt-6 md:col-span-2">
               <button type="button" className="btn btn-ghost" onClick={() => setStep(1)}>Back</button>
               <div className="flex flex-wrap items-center gap-4">
-                <span className="muted text-sm">Emailed to {defaults.email}</span>
-                <button className="btn btn-brass" disabled={busy}>{busy ? "Sending…" : "Create my poster"}</button>
+                <span className="muted text-sm">The poster comes to {defaults.email}</span>
+                <button className="btn btn-brass" disabled={busy}>{busy ? "Sending…" : "Send request"}</button>
               </div>
             </div>
           </form>

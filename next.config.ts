@@ -3,10 +3,10 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactCompiler: true,
   // Native / fs-heavy packages stay out of the bundle.
-  serverExternalPackages: ["@resvg/resvg-js", "@libsql/client", "satori", "nodemailer", "sharp"],
-  // Poster fonts are read from disk at runtime; ship them with every server route.
+  serverExternalPackages: ["@libsql/client", "nodemailer", "sharp"],
+  // Full-size house crests are read from disk to attach to designers' emails.
   outputFileTracingIncludes: {
-    "/**": ["./assets/fonts/**/*", "./assets/houses/**/*"],
+    "/**": ["./assets/houses/**/*"],
   },
   turbopack: {
     rules: {

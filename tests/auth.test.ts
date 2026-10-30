@@ -20,7 +20,7 @@ beforeEach(async () => {
   setDbForTests(createClient({ url: "file::memory:" }));
   await ensureSchema();
   await db().execute({
-    sql: "INSERT INTO users (email, name, region, role, active, created_at) VALUES (?, 'Asha', 'Chandigarh Region', 'rc', 1, 0)",
+    sql: "INSERT INTO people (email, name, region, role, active, created_at) VALUES (?, 'Asha', 'Chandigarh Region', 'rc', 1, 0)",
     args: [RC],
   });
 });
@@ -66,7 +66,7 @@ describe("session", () => {
   it("round-trips and dies when the RC is deactivated", async () => {
     const token = await createSessionToken({ email: RC, name: "Asha", region: "", role: "rc" });
     expect((await userFromToken(token))?.email).toBe(RC);
-    await db().execute({ sql: "UPDATE users SET active = 0 WHERE email = ?", args: [RC] });
+    await db().execute({ sql: "UPDATE people SET active = 0 WHERE email = ?", args: [RC] });
     expect(await userFromToken(token)).toBeNull();
     expect(await userFromToken("garbage")).toBeNull();
   });

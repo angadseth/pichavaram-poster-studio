@@ -19,6 +19,13 @@ export async function requireAdmin(): Promise<User> {
   return user;
 }
 
+/** Designers and admins: the people who make posters. */
+export async function requireStaff(): Promise<User> {
+  const user = await requireUser();
+  if (user.role === "rc") redirect("/requests");
+  return user;
+}
+
 export async function startSession(user: User) {
   const jar = await cookies();
   jar.set(SESSION_COOKIE, await createSessionToken(user), {

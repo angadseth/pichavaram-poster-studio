@@ -11,7 +11,7 @@ const mono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Pichavaram Poster Studio",
-  description: "Event posters for Pichavaram House RCs, designed and emailed in about a minute.",
+  description: "Pichavaram House RCs ask for event posters; the design team makes them and emails them over.",
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
@@ -31,8 +31,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             <nav className="flex items-center gap-1">
               {user ? (
                 <>
-                  <Link className="navlink hidden sm:inline-flex" href="/studio">New poster</Link>
-                  <Link className="navlink" href="/requests">My posters</Link>
+                  <Link className="navlink hidden sm:inline-flex" href="/studio">Request a poster</Link>
+                  <Link className="navlink" href="/requests">My requests</Link>
+                  {user.role !== "rc" ? <Link className="navlink" href="/work">My work</Link> : null}
                   {user.role === "admin" ? <Link className="navlink" href="/admin">Admin</Link> : null}
                   <SignOut />
                 </>

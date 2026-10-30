@@ -1,14 +1,19 @@
 import { fail, guard, json, readJson } from "@/lib/api";
-import { normalizeEmail } from "@/lib/auth";
+import { normalizeEmail, type Role } from "@/lib/auth";
 import { db, ensureSchema } from "@/lib/db";
 
 const EMAIL = /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/;
+
+function toRole(v: unknown): Role {
+  const r = typeof v === "string" ? v.trim().toLowerCase() : "";
+  return r === "admin" || r === "designer" ? r : "rc";
+}
 
 export async function GET() {
   const user = await guard("admin");
   if (user instanceof Response) return user;
   await ensureSchema();
-  const r = await db().execute("SELECT email, name, region, role, active, created_at FROM users ORDER BY role, region, email");
+  const r = await db().execute("SELECT email, name, region, role, active, created_at FROM people ORDER BY role, region, email");
   return json(r.rows);
 }
 
@@ -23,15 +28,15 @@ export async function POST(req: Request) {
   const body = await readJson(req);
   if (!body) return fail(400, "Invalid request.");
 
-  type Row = { email: string; name: string; region: string; role: "rc" | "admin"; active: number };
+  type Row = { email: string; name: string; region: string; role: Role; active: number };
   const rows: Row[] = [];
   const bad: string[] = [];
   if (typeof body.bulk === "string") {
     for (const line of body.bulk.split(/\r?\n/)) {
-      const [email = "", name = "", region = ""] = line.split(/[,\t]/).map((x) => x.trim());
+      const [email = "", name = "", region = "", role = ""] = line.split(/[,\t]/).map((x) => x.trim());
       if (!email) continue;
       if (!EMAIL.test(email)) bad.push(email);
-      else rows.push({ email: normalizeEmail(email), name: name.slice(0, 60), region: region.slice(0, 40), role: "rc", active: 1 });
+      else rows.push({ email: normalizeEmail(email), name: name.slice(0, 60), region: region.slice(0, 40), role: toRole(role), active: 1 });
     }
   } else {
     const email = typeof body.email === "string" ? body.email.trim() : "";
@@ -40,7 +45,7 @@ export async function POST(req: Request) {
       email: normalizeEmail(email),
       name: typeof body.name === "string" ? body.name.trim().slice(0, 60) : "",
       region: typeof body.region === "string" ? body.region.trim().slice(0, 40) : "",
-      role: body.role === "admin" ? "admin" : "rc",
+      role: toRole(body.role),
       active: body.active === false ? 0 : 1,
     });
   }
@@ -50,7 +55,7 @@ export async function POST(req: Request) {
   if (rows.length === 0) return fail(400, bad.length ? `Invalid emails: ${bad.join(", ")}` : "Nothing to import.");
   await db().batch(
     rows.map((r) => ({
-      sql: `INSERT INTO users (email, name, region, role, active, created_at) VALUES (?, ?, ?, ?, ?, ?)
+      sql: `INSERT INTO people (email, name, region, role, active, created_at) VALUES (?, ?, ?, ?, ?, ?)
             ON CONFLICT(email) DO UPDATE SET name = excluded.name, region = excluded.region, role = excluded.role, active = excluded.active`,
       args: [r.email, r.name, r.region, r.role, r.active, Date.now()],
     })),
@@ -68,8 +73,10 @@ export async function DELETE(req: Request) {
   await ensureSchema();
   await db().batch(
     [
-      { sql: "DELETE FROM users WHERE email = ?", args: [email] },
+      { sql: "DELETE FROM people WHERE email = ?", args: [email] },
       { sql: "DELETE FROM otps WHERE email = ?", args: [email] },
+      // their unfinished work goes back to the queue
+      { sql: "UPDATE poster_requests SET status = 'new', assignee = NULL, assigned_at = NULL WHERE assignee = ? AND status = 'assigned'", args: [email] },
     ],
     "write",
   );

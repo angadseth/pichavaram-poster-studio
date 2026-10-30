@@ -3,7 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-type Person = { email: string; name: string; region: string; role: "rc" | "admin"; active: boolean };
+type Role = "rc" | "designer" | "admin";
+type Person = { email: string; name: string; region: string; role: Role; active: boolean };
+const ROLE_LABEL: Record<Role, string> = { rc: "RC", designer: "Designer", admin: "Admin" };
 type House = { id: string; name: string; logo: string; custom: boolean };
 
 async function call(url: string, method: string, body?: unknown) {
@@ -18,7 +20,7 @@ async function call(url: string, method: string, body?: unknown) {
 
 export function PeopleAdmin({ initial, me }: { initial: Person[]; me: string }) {
   const router = useRouter();
-  const [form, setForm] = useState({ email: "", name: "", region: "", role: "rc" as "rc" | "admin" });
+  const [form, setForm] = useState({ email: "", name: "", region: "", role: "rc" as Role });
   const [bulk, setBulk] = useState("");
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -36,7 +38,7 @@ export function PeopleAdmin({ initial, me }: { initial: Person[]; me: string }) 
   return (
     <section className="panel mt-10 p-6">
       <h2 className="display text-3xl">People who can sign in</h2>
-      <p className="muted mt-1 text-sm">RCs request posters. Admins also see every request and manage this list.</p>
+      <p className="muted mt-1 text-sm">RCs ask for posters. Designers make the ones assigned to them. Admins assign requests and manage this list.</p>
 
       <div className="mt-6 overflow-x-auto">
         <table className="table min-w-[640px]">
@@ -47,7 +49,7 @@ export function PeopleAdmin({ initial, me }: { initial: Person[]; me: string }) 
                 <td>{p.email}</td>
                 <td>{p.name || <span className="muted">–</span>}</td>
                 <td>{p.region || <span className="muted">–</span>}</td>
-                <td>{p.role === "admin" ? "Admin" : "RC"}</td>
+                <td>{ROLE_LABEL[p.role]}</td>
                 <td className="text-right">
                   {p.email !== me ? (
                     <button
@@ -79,8 +81,9 @@ export function PeopleAdmin({ initial, me }: { initial: Person[]; me: string }) 
             <input className="input" placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             <input className="input" placeholder="Region" value={form.region} onChange={(e) => setForm({ ...form, region: e.target.value })} />
           </div>
-          <select className="input" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as "rc" | "admin" })}>
-            <option value="rc">RC</option>
+          <select className="input" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as Role })}>
+            <option value="rc">RC (asks for posters)</option>
+            <option value="designer">Designer (makes posters)</option>
             <option value="admin">Admin</option>
           </select>
           <button className="btn btn-brass" disabled={busy}>Add person</button>
@@ -92,7 +95,7 @@ export function PeopleAdmin({ initial, me }: { initial: Person[]; me: string }) 
             if (await run(call("/api/admin/users", "POST", { bulk }), "Imported the list.")) setBulk("");
           }}
         >
-          <h3 className="font-semibold">Import RCs in bulk</h3>
+          <h3 className="font-semibold">Import many at once</h3>
           <textarea
             className="input min-h-[150px]"
             placeholder={"One per line: email, name, region\n24f1000001@ds.study.iitm.ac.in, Asha, Chandigarh Region"}

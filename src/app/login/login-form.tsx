@@ -48,7 +48,7 @@ export function LoginForm() {
     setError("");
     const r = await post("/api/auth/verify", { email, code });
     if (r.ok) {
-      window.location.assign(r.data.role === "admin" ? "/admin" : "/studio");
+      window.location.assign(r.data.role === "admin" ? "/admin" : r.data.role === "designer" ? "/work" : "/studio");
       return;
     }
     setBusy(false);

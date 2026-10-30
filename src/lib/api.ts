@@ -1,4 +1,3 @@
-import type { Choice } from "@/poster/types";
 import type { User } from "./auth";
 import { currentUser } from "./session";
 
@@ -29,14 +28,4 @@ export async function guard(role?: "admin"): Promise<User | Response> {
 
 export function appUrl(req: Request): string {
   return process.env.APP_URL?.replace(/\/$/, "") ?? new URL(req.url).origin;
-}
-
-export function readChoice(raw: unknown): Partial<Choice> {
-  if (!raw || typeof raw !== "object") return {};
-  const c = raw as Record<string, unknown>;
-  return {
-    templateId: typeof c.templateId === "string" ? c.templateId : undefined,
-    paletteId: typeof c.paletteId === "string" ? c.paletteId : undefined,
-    seed: typeof c.seed === "number" && Number.isInteger(c.seed) && c.seed >= 0 && c.seed < 2 ** 31 ? c.seed : undefined,
-  };
 }

@@ -9,7 +9,8 @@ export const OTP_MAX_ATTEMPTS = 5;
 export const SESSION_COOKIE = "pps_session";
 export const SESSION_TTL_S = 7 * 24 * 60 * 60;
 
-export type User = { email: string; name: string; region: string; role: "rc" | "admin" };
+export type User = { email: string; name: string; region: string; role: Role };
+export type Role = "rc" | "designer" | "admin";
 
 function secret(): string {
   const s = process.env.AUTH_SECRET;
@@ -31,7 +32,7 @@ function hashCode(email: string, code: string): string {
 export async function getUser(email: string): Promise<User | null> {
   await ensureSchema();
   const r = await db().execute({
-    sql: "SELECT email, name, region, role FROM users WHERE email = ? AND active = 1",
+    sql: "SELECT email, name, region, role FROM people WHERE email = ? AND active = 1",
     args: [normalizeEmail(email)],
   });
   const row = r.rows[0];

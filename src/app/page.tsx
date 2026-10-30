@@ -1,28 +1,23 @@
 import Link from "next/link";
 import { currentUser } from "@/lib/session";
-import { TEMPLATES } from "@/poster/registry";
-
-const FAN = [
-  { x: "-200px", r: "-14deg" },
-  { x: "-100px", r: "-7deg" },
-  { x: "0px", r: "0deg" },
-  { x: "100px", r: "7deg" },
-  { x: "200px", r: "14deg" },
-];
 
 const CRESTS = ["pichavaram", "bandipur", "corbett", "kanha", "kaziranga", "nallamala", "namdapha", "saranda", "sundarbans", "wayanad"];
 
+// sample requests on the hero, as job tickets moving through the studio
+const TICKETS = [
+  { x: "-150px", r: "-11deg", kind: "Meetup", title: "Chai & Baatcheet", date: "Sun, 14 Dec", houses: ["pichavaram", "kanha"], status: "Delivered" },
+  { x: "0px", r: "0deg", kind: "Music Night", title: "Unplugged Evening", date: "Sat, 20 Dec", houses: ["pichavaram", "corbett", "saranda"], status: "In design" },
+  { x: "150px", r: "11deg", kind: "Game Night", title: "Skribbl Showdown", date: "Fri, 26 Dec", houses: ["pichavaram", "wayanad"], status: "Received" },
+];
+
 const STEPS = [
-  { title: "Tell it the event", body: "Music night, game night, a city meetup. Pick the type, the date and time, and add the Meet link or the venue." },
-  { title: "Add the houses", body: "Pichavaram is always on it. Tick every house you're collaborating with and their crests are placed for you." },
-  { title: "Open your inbox", body: "The studio picks a design that suits the event and emails you a 1080 × 1350 poster within a minute." },
+  { title: "Send the brief", body: "The event, the date and time, the Meet link or venue, and the houses you're collaborating with. Two minutes." },
+  { title: "A designer makes it", body: "The Web Admin hands it to someone on the Pichavaram design team, with every house crest attached." },
+  { title: "It lands in your inbox", body: "The finished poster is emailed to you, ready for WhatsApp and Instagram. Track it here meanwhile." },
 ];
 
 export default async function Home() {
   const user = await currentUser();
-  // public/showcase/<id>.jpg is generated for every template by `npm run showcase`
-  const fan = [TEMPLATES[1], TEMPLATES[4], TEMPLATES[0], TEMPLATES[9], TEMPLATES[7]].filter(Boolean);
-  const wall = [...TEMPLATES, ...TEMPLATES];
   const cta = user ? "/studio" : "/login";
 
   return (
@@ -32,30 +27,39 @@ export default async function Home() {
           Poster <em>Studio</em>
         </h1>
         <div className="rule mt-6" />
-        <div className="grid items-center gap-8 pt-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+        <div className="grid items-center gap-8 pt-10 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
           <div className="relative z-10 max-w-lg">
             <p className="display text-[clamp(28px,3.4vw,40px)] leading-[1.1]">
-              Your event on a poster, in your inbox within a minute.
+              Tell us about your event. The design team makes the poster.
             </p>
             <p className="muted mt-5 text-[17px] leading-relaxed">
-              The poster studio for Pichavaram House Regional Coordinators. Say what you&apos;re hosting; a designed poster,
-              ready for WhatsApp and Instagram, lands in your email.
+              For Pichavaram House Regional Coordinators. Ask for a poster in one form; a designer from the house makes it
+              and it&apos;s emailed straight to you.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href={cta} className="btn btn-brass">{user ? "Make a poster" : "Sign in to make a poster"}</Link>
-              {user ? <Link href="/requests" className="btn btn-ghost">My posters</Link> : null}
+              <Link href={cta} className="btn btn-brass">{user ? "Request a poster" : "Sign in to request a poster"}</Link>
+              {user ? <Link href="/requests" className="btn btn-ghost">My requests</Link> : null}
             </div>
             <p className="muted mt-5 text-sm">Only RCs on the Pichavaram list can sign in. Ask the Web Admin to add you.</p>
           </div>
-          <div className="fan overflow-x-clip" aria-label="Sample posters made by the studio">
-            {fan.map((t, i) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={t.id}
-                src={`/showcase/${t.id}.jpg`}
-                alt={`${t.name} poster design`}
-                style={{ ["--x" as string]: FAN[i].x, ["--r" as string]: FAN[i].r, zIndex: 5 - Math.abs(i - 2) }}
-              />
+          <div className="fan overflow-x-clip" aria-hidden>
+            {TICKETS.map((t, i) => (
+              <div
+                key={t.title}
+                className="ticket aspect-[4/5]"
+                style={{ ["--x" as string]: t.x, ["--r" as string]: t.r, zIndex: i === 1 ? 3 : 1 }}
+              >
+                <span className="mono text-[var(--mute)]">{t.kind}</span>
+                <div className="mt-4 flex gap-1.5">
+                  {t.houses.map((h) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img key={h} src={`/crests/${h}.webp`} alt="" width={30} height={30} className="crest" />
+                  ))}
+                </div>
+                <span className="display mt-auto text-[40px] leading-[.95]">{t.title}</span>
+                <span className="mt-3 text-sm text-[var(--ivory-2)]">{t.date}</span>
+                <span className={`chip mt-5 self-start ${t.status === "Delivered" ? "chip-ok" : "chip-wait"}`}>{t.status}</span>
+              </div>
             ))}
           </div>
         </div>
@@ -76,7 +80,7 @@ export default async function Home() {
       </section>
 
       <section className="shell py-24">
-        <h2 className="display text-[clamp(36px,5vw,64px)]">Three steps, no designer needed</h2>
+        <h2 className="display text-[clamp(36px,5vw,64px)]">How a poster gets made</h2>
         <ol className="mt-14 grid gap-12 md:grid-cols-3 md:gap-10">
           {STEPS.map((s, i) => (
             <li key={s.title} className="border-t border-[var(--line-2)] pt-6">
@@ -88,29 +92,9 @@ export default async function Home() {
         </ol>
       </section>
 
-      <section className="pb-8">
-        <div className="shell mb-10 flex flex-wrap items-end justify-between gap-6">
-          <h2 className="display max-w-2xl text-[clamp(36px,5vw,64px)]">{TEMPLATES.length} designs, three colourways each</h2>
-          <p className="muted max-w-sm">
-            Each request gets the design that suits it, and the studio won&apos;t repeat your last two, so your posters never
-            look alike.
-          </p>
-        </div>
-        <div className="wall flex flex-col gap-6">
-          <div className="marquee" style={{ ["--dur" as string]: "90s" }}>
-            <div className="marquee__track">
-              {wall.map((t, i) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img key={i} src={`/showcase/${t.id}.jpg`} alt={i < TEMPLATES.length ? `${t.name} poster design` : ""} loading="lazy" />
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="shell pt-20 text-center">
-        <p className="display text-[clamp(36px,5vw,64px)]">Got an event this week?</p>
-        <Link href={cta} className="btn btn-brass mt-8">{user ? "Make a poster" : "Sign in to make a poster"}</Link>
+      <section className="shell pt-8 text-center">
+        <p className="display text-[clamp(36px,5vw,64px)]">Got an event coming up?</p>
+        <Link href={cta} className="btn btn-brass mt-8">{user ? "Request a poster" : "Sign in to request a poster"}</Link>
       </section>
     </>
   );

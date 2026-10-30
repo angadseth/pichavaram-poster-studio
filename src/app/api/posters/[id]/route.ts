@@ -1,34 +1,26 @@
 import { fail, guard } from "@/lib/api";
-import { canView, getRequest, getThumb, posterFilename, renderRequest } from "@/lib/pipeline";
+import { canView, getPoster, getRequest, getThumb, posterFilename } from "@/lib/requests";
 
-export const maxDuration = 60;
-
-/**
- * Full-resolution PNG, re-rendered from the stored seed. ?download=1 forces a
- * file save; ?thumb=1 returns the stored 360px JPEG.
- */
+/** The uploaded poster. ?thumb=1 returns the 480px JPEG; ?download=1 forces a file save. */
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await guard();
   if (user instanceof Response) return user;
   const { id } = await params;
   const row = await getRequest(id);
   if (!row || !canView(user, row)) return fail(404, "Poster not found.");
-  const params2 = new URL(req.url).searchParams;
-  if (params2.has("thumb")) {
+  const q = new URL(req.url).searchParams;
+  if (q.has("thumb")) {
     const thumb = await getThumb(id);
-    if (thumb) {
-      return new Response(new Uint8Array(thumb), {
-        headers: { "Content-Type": "image/jpeg", "Cache-Control": "private, max-age=86400" },
-      });
-    }
+    if (!thumb) return fail(404, "No poster yet.");
+    return new Response(new Uint8Array(thumb), { headers: { "Content-Type": "image/jpeg", "Cache-Control": "private, max-age=300" } });
   }
-  const { png } = await renderRequest(row);
-  const download = params2.has("download");
-  return new Response(new Uint8Array(png), {
+  const p = await getPoster(id);
+  if (!p) return fail(404, "No poster yet.");
+  return new Response(new Uint8Array(p.data), {
     headers: {
-      "Content-Type": "image/png",
-      "Cache-Control": "private, max-age=3600",
-      "Content-Disposition": `${download ? "attachment" : "inline"}; filename="${posterFilename(row)}"`,
+      "Content-Type": p.mime,
+      "Cache-Control": "private, max-age=300",
+      "Content-Disposition": `${q.has("download") ? "attachment" : "inline"}; filename="${posterFilename(row, p.mime)}"`,
     },
   });
 }
