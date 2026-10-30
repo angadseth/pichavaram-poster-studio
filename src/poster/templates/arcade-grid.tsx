@@ -25,7 +25,7 @@ function LogoRows({ houses, plate, ring, max, width, gap = 12 }: { houses: Poste
               key={h.name}
               style={{ display: "flex", width: size, height: size, borderRadius: size, background: plate, border: `2px solid ${ring}`, alignItems: "center", justifyContent: "center", overflow: "hidden" }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
+              { }
               <img alt="" src={h.logo} width={size - 12} height={size - 12} style={{ objectFit: "contain" }} />
             </div>
           ))}

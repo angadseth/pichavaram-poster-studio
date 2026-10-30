@@ -79,7 +79,7 @@ test("full RC journey: allowlist → OTP → preview → poster email → downlo
   expect(made.status).toBe("sent");
   expect(Date.now() - t0).toBeLessThan(60_000);
   const mail = (await mails()).find((m) => m.to === RC && m.subject.includes("poster is ready"));
-  expect(mail.attachments[0].contentType).toBe("image/png");
+  expect(mail.attachments.map((a: { contentType: string }) => a.contentType)).toEqual(["image/jpeg", "image/png"]);
   expect(mail.html).not.toContain("Asha Verma"); // host stays in the records only
 
   // download full PNG + thumbnail

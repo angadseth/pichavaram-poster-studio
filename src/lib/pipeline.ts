@@ -166,6 +166,7 @@ export async function deliver(req: RequestRow, appUrl?: string): Promise<Request
         title: req.title,
         when: `${w.weekdayLong}, ${w.day} ${w.monthLong} ${w.year} · ${w.time}`,
         png,
+        preview: await sharp(png).resize(720).jpeg({ quality: 82, mozjpeg: true }).toBuffer(),
         filename: posterFilename(req),
         link: appUrl ? `${appUrl}/requests/${req.id}` : undefined,
       }),

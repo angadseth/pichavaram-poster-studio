@@ -6,7 +6,7 @@ export function SignOut() {
       className="btn btn-ghost btn-sm"
       onClick={async () => {
         await fetch("/api/auth/logout", { method: "POST" });
-        window.location.href = "/";
+        window.location.assign("/");
       }}
     >
       Sign out

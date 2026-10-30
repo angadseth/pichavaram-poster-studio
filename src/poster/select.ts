@@ -14,7 +14,7 @@ export function isEligible(templateId: string, data: Pick<PosterData, "eventType
 
 /** How well a template fits the request: type match + mood words in the text. */
 export function scoreTemplate(t: Template, data: PosterData, notes = ""): number {
-  let score = t.eventTypes === "all" ? 1 : 3;
+  const score = t.eventTypes === "all" ? 1 : 3;
   const text = [data.title, data.tagline, data.description, notes, ...data.highlights]
     .filter(Boolean)
     .join(" ")

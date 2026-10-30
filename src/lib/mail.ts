@@ -77,6 +77,7 @@ export function posterMail(o: {
   title: string;
   when: string;
   png: Buffer;
+  preview: Buffer; // small JPEG shown inside the email body
   filename: string;
   link?: string;
 }): Mail {
@@ -91,7 +92,8 @@ export function posterMail(o: {
         o.link ? ` <a href="${esc(o.link)}" style="color:#D9B26F">Open in Poster Studio</a>` : ""
       }</td></tr>`),
     attachments: [
-      { filename: o.filename, content: o.png, contentType: "image/png", cid: "poster" },
+      { filename: "preview.jpg", content: o.preview, contentType: "image/jpeg", cid: "poster" },
+      { filename: o.filename, content: o.png, contentType: "image/png" },
     ],
   };
 }

@@ -174,7 +174,7 @@ function render(ctx: RenderCtx) {
             <Qr ctx={ctx} ink={p.muted} size={118} label="Scan" />
           ) : (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "4px 0" }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
+              { }
               <img alt="" src={barcode(ctx)} width={170} height={104} />
               <div style={{ display: "flex", fontFamily: "Mono", fontSize: 15, letterSpacing: 2, color: p.muted }}>{`${when.day}${monthNum}${when.year}`}</div>
             </div>

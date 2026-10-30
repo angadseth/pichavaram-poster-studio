@@ -218,7 +218,7 @@ function render(ctx: RenderCtx) {
               border: `1.5px solid ${rgba(p.ink, light ? 0.16 : 0.22)}`,
             }}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
+            { }
             <img
               alt=""
               src={svgUri(mapArt(ctx, cardW, cardH, light ? paper.sheet : p.bg))}
@@ -228,7 +228,7 @@ function render(ctx: RenderCtx) {
             />
             <div style={{ display: "flex", flexDirection: "column", position: "relative", padding: "26px 30px 24px", width: 440, height: cardH - 50 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
+                { }
                 <img alt="" src={pinIcon(p.accent)} width={18} height={25} />
                 <div style={{ display: "flex", fontFamily: "Grotesk", fontWeight: 700, fontSize: 18, letterSpacing: 5, color: p.accent }}>
                   {data.mode === "online" ? "JOIN ON" : "MEET US AT"}

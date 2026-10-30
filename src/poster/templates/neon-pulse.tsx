@@ -25,7 +25,7 @@ function LogoRows({ houses, plate, ring, max, width, gap = 14 }: { houses: Poste
               key={h.name}
               style={{ display: "flex", width: size, height: size, borderRadius: size, background: plate, border: `2px solid ${ring}`, alignItems: "center", justifyContent: "center", overflow: "hidden" }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
+              { }
               <img alt="" src={h.logo} width={size - 14} height={size - 14} style={{ objectFit: "contain" }} />
             </div>
           ))}
@@ -144,7 +144,7 @@ function render(ctx: RenderCtx) {
           <div style={{ display: "flex", fontFamily: "Syne", fontWeight: 600, fontSize: 34, color: p.accent2, marginTop: 18 }}>{tagline}</div>
         ) : null}
         <div style={{ display: "flex", margin: "26px 0 22px" }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
+          { }
           <img alt="" src={svgUri(equaliser(ctx, 940, 64))} width={940} height={64} />
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 30 }}>

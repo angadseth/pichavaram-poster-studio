@@ -1,5 +1,3 @@
-import { existsSync } from "node:fs";
-import path from "node:path";
 import Link from "next/link";
 import { currentUser } from "@/lib/session";
 import { TEMPLATES } from "@/poster/registry";
@@ -20,7 +18,8 @@ const STEPS = [
 
 export default async function Home() {
   const user = await currentUser();
-  const shown = TEMPLATES.filter((t) => existsSync(path.join(process.cwd(), "public", "showcase", `${t.id}.jpg`)));
+  // public/showcase/<id>.jpg is generated for every template by `npm run showcase`
+  const shown = TEMPLATES;
   const fan = shown.slice(0, 5);
   const cta = user ? "/studio" : "/login";
 

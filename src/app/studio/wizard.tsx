@@ -98,7 +98,7 @@ export function Wizard({
     });
     const data = await res.json().catch(() => ({}));
     setBusy(false);
-    if (res.status === 401) return void (window.location.href = "/login");
+    if (res.status === 401) return void window.location.assign("/login");
     if (!res.ok) {
       if (data.errors) {
         setErrors(data.errors);
@@ -124,7 +124,7 @@ export function Wizard({
     });
     const data = await res.json().catch(() => ({}));
     setBusy(false);
-    if (res.status === 401) return void (window.location.href = "/login");
+    if (res.status === 401) return void window.location.assign("/login");
     if (!res.ok) {
       if (data.errors) {
         setErrors(data.errors);

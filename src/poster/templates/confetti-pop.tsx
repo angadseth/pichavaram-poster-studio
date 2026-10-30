@@ -170,7 +170,7 @@ function render(ctx: RenderCtx) {
         {/* sticker date + details */}
         <div style={{ display: "flex", alignItems: "center", gap: 30, marginTop: 30 }}>
           <div style={{ display: "flex", position: "relative", width: S, height: S, flexShrink: 0, transform: "rotate(-8deg)" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
+            { }
             <img alt="" src={svgUri(stickerSvg(S, p.accent, stickerInk))} width={S} height={S} style={{ position: "absolute", left: 0, top: 0 }} />
             <div
               style={{

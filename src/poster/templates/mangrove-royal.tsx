@@ -161,7 +161,7 @@ function render(ctx: RenderCtx) {
       <Art svg={art(ctx)} />
       <Grain opacity={0.12} />
       <Layer style={{ padding: "84px 110px 112px", alignItems: "center" }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
+        { }
         <img alt="" src={crest(ctx)} width={360} height={156} style={{ flexShrink: 0 }} />
         <div style={{ display: "flex", fontFamily: "Grotesk", fontWeight: 700, fontSize: 18, letterSpacing: 6, color: p.accent, marginTop: 16 }}>
           {collabLine(data.houses).toUpperCase()}

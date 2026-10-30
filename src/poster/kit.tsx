@@ -26,7 +26,7 @@ export function Frame({ bg, children, style }: { bg: string; children: ReactNode
 
 /** Full-bleed SVG art layer. */
 export function Art({ svg, style }: { svg: string; style?: CSSProperties }) {
-  // eslint-disable-next-line @next/next/no-img-element
+   
   return (
     <img
       alt=""
@@ -104,7 +104,7 @@ export function Logos({
             overflow: "hidden",
           }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
+          { }
           <img alt="" src={h.logo} width={size - 14} height={size - 14} style={{ objectFit: "contain" }} />
         </div>
       ))}
@@ -124,7 +124,7 @@ export function Qr({ ctx, size = 150, label = "Scan to join", ink }: { ctx: Rend
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
       <div style={{ display: "flex", padding: 12, background: "#FFFDF8", borderRadius: 18 }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
+        { }
         <img alt="" src={ctx.qr} width={size} height={size} />
       </div>
       <div style={{ display: "flex", fontFamily: "Grotesk", fontSize: 18, letterSpacing: 3, color: ink, textTransform: "uppercase" }}>
