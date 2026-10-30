@@ -108,8 +108,11 @@ async function admins(): Promise<string[]> {
   return r.rows.map((row) => String(row.email));
 }
 
-/** Plain-language brief of a request, used in emails and on the request page. */
-export async function briefOf(req: Pick<RequestRow, "eventType" | "title" | "input" | "notes" | "hostName">) {
+/**
+ * Plain-language brief of a request, used in emails and on the request page.
+ * The host's name is left out: it is kept for the records and must not end up on the poster.
+ */
+export async function briefOf(req: Pick<RequestRow, "eventType" | "title" | "input" | "notes">) {
   const houses = await listHouses();
   const chosen = houses.filter((h) => h.id === "pichavaram" || req.input.houseIds.includes(h.id));
   const i = req.input;
@@ -123,8 +126,7 @@ export async function briefOf(req: Pick<RequestRow, "eventType" | "title" | "inp
   rows.push(["Houses", chosen.map((h) => h.name.replace(/ House$/, "")).join(", ")]);
   if (i.highlights.length) rows.push(["Highlights", i.highlights.join(", ")]);
   if (i.region) rows.push(["Region", i.region]);
-  if (req.notes) rows.push(["Feel / notes", req.notes]);
-  rows.push(["Hosted by", req.hostName]);
+  if (req.notes) rows.push(["Notes", req.notes]);
   return { rows, houses: chosen };
 }
 

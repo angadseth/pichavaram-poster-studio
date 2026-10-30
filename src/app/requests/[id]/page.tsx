@@ -86,6 +86,8 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
               <dd className="break-words">{k === "Meeting link" ? <a className="underline decoration-[var(--gold)] underline-offset-4" href={v}>{v}</a> : v}</dd>
             </div>
           ))}
+          <dt className="muted">Hosted by</dt>
+          <dd>{r.hostName} <span className="muted text-sm">(for the records, not for the poster)</span></dd>
         </dl>
 
         <h3 className="mt-10 text-sm text-[var(--ivory-2)]">Crests for the poster</h3>
