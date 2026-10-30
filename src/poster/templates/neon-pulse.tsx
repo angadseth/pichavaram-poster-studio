@@ -1,4 +1,4 @@
-import { Art, Frame, Layer, Qr, Spacer, collabLine } from "../kit";
+import { Art, Frame, Grain, Layer, Logos, Qr, Spacer, collabLine } from "../kit";
 import type { PosterHouse, RenderCtx, Template } from "../types";
 import { fitSize, svgUri, truncate } from "../util";
 
@@ -7,32 +7,38 @@ function rgba(hex: string, a: number) {
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
 }
 
-// Turbulence on one small stitched tile, repeated: same look as kit Grain at a fraction of the cost.
-const GRAIN = `<filter id="gn" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><pattern id="gt" width="240" height="240" patternUnits="userSpaceOnUse"><rect width="240" height="240" filter="url(#gn)"/></pattern>`;
-
-/** Logo plates in explicit balanced rows (5+5, not 7+3). */
-function LogoRows({ houses, plate, ring, max, width, gap = 14 }: { houses: PosterHouse[]; plate: string; ring: string; max: number; width: number; gap?: number }) {
-  const n = houses.length;
-  const perRow = n <= 6 ? n : Math.ceil(n / 2);
-  const size = Math.max(52, Math.min(max, Math.floor((width - gap * (perRow - 1)) / perRow)));
-  const rows = [houses.slice(0, perRow), houses.slice(perRow)].filter((r) => r.length);
+/** Lone Pichavaram logo gets a wordmark so it reads as a sign-off, not a leftover. */
+function Houses({ houses, ring, ink, muted, max, width }: { houses: PosterHouse[]; ring: string; ink: string; muted: string; max: number; width: number }) {
+  const logos = <Logos houses={houses} plate="#FFFDF8" ring={ring} max={max} gap={14} width={width} justify="flex-start" />;
+  if (houses.length > 1) return logos;
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap }}>
-      {rows.map((row, ri) => (
-        <div key={ri} style={{ display: "flex", gap }}>
-          {row.map((h) => (
-            <div
-              key={h.name}
-              style={{ display: "flex", width: size, height: size, borderRadius: size, background: plate, border: `2px solid ${ring}`, alignItems: "center", justifyContent: "center", overflow: "hidden" }}
-            >
-              { }
-              <img alt="" src={h.logo} width={size - 14} height={size - 14} style={{ objectFit: "contain" }} />
-            </div>
-          ))}
-        </div>
-      ))}
+    <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+      {logos}
+      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        <div style={{ display: "flex", fontFamily: "Manrope", fontWeight: 800, fontSize: 26, color: ink }}>{houses[0].name}</div>
+        <div style={{ display: "flex", fontFamily: "Grotesk", fontSize: 18, letterSpacing: 3, color: muted }}>IIT MADRAS · BS DEGREE</div>
+      </div>
     </div>
   );
+}
+
+/** Glowing neon ring, drawn as its own image so it can sit in flow behind the echo line only. */
+function ringSvg({ p }: RenderCtx, d: number) {
+  const pad = 34;
+  const c = d / 2 + pad;
+  const r = d / 2 - 6;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${d + pad * 2}" height="${d + pad * 2}">
+    <defs>
+      <radialGradient id="in"><stop offset="0" stop-color="${p.accent2}" stop-opacity="0.18"/><stop offset="1" stop-color="${p.accent2}" stop-opacity="0"/></radialGradient>
+      <filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="12"/></filter>
+    </defs>
+    <circle cx="${c}" cy="${c}" r="${r - 22}" fill="url(#in)"/>
+    <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="${p.accent}" stroke-width="24" stroke-opacity="0.5" filter="url(#glow)"/>
+    <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="${p.accent}" stroke-width="7"/>
+    <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="#FFFFFF" stroke-opacity="0.75" stroke-width="2"/>
+    <circle cx="${c}" cy="${c}" r="${r - 22}" fill="none" stroke="${p.accent2}" stroke-opacity="0.45" stroke-width="1.5"/>
+    <circle cx="${c}" cy="${c}" r="${r + 22}" fill="none" stroke="${p.accent2}" stroke-opacity="0.35" stroke-width="1.5" stroke-dasharray="2 10"/>
+  </svg>`;
 }
 
 /** Mirrored equaliser strip, used in flow as the divider under the title. */
@@ -56,10 +62,7 @@ function equaliser({ p, rng }: RenderCtx, w: number, h: number) {
 }
 
 function art({ p, rng }: RenderCtx) {
-  const cx = 790 + Math.round(rng() * 60);
-  const cy = 330 + Math.round(rng() * 40);
-  const r = 210;
-  const b1 = { x: cx + 40 + rng() * 60, y: cy - 60 + rng() * 80 };
+  const b1 = { x: 830 + rng() * 120, y: 260 + rng() * 120 };
   const b2 = { x: 90 + rng() * 160, y: 760 + rng() * 160 };
   const b3 = { x: 860 + rng() * 120, y: 1160 + rng() * 80 };
   return `<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350">
@@ -67,22 +70,13 @@ function art({ p, rng }: RenderCtx) {
       <radialGradient id="g" cx="0.7" cy="0.25" r="1"><stop offset="0" stop-color="${p.bg2}"/><stop offset="0.7" stop-color="${p.bg}"/></radialGradient>
       <radialGradient id="ba"><stop offset="0" stop-color="${p.accent}" stop-opacity="0.5"/><stop offset="0.45" stop-color="${p.accent}" stop-opacity="0.22"/><stop offset="1" stop-color="${p.accent}" stop-opacity="0"/></radialGradient>
       <radialGradient id="bb"><stop offset="0" stop-color="${p.accent2}" stop-opacity="0.36"/><stop offset="0.45" stop-color="${p.accent2}" stop-opacity="0.15"/><stop offset="1" stop-color="${p.accent2}" stop-opacity="0"/></radialGradient>
-      ${GRAIN}
-      <filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="14"/></filter>
       <pattern id="scan" width="6" height="6" patternUnits="userSpaceOnUse"><rect width="6" height="1.4" fill="#FFFFFF" fill-opacity="0.035"/></pattern>
     </defs>
     <rect width="1080" height="1350" fill="url(#g)"/>
     <circle cx="${b1.x}" cy="${b1.y}" r="520" fill="url(#ba)"/>
     <circle cx="${b2.x}" cy="${b2.y}" r="500" fill="url(#bb)"/>
     <circle cx="${b3.x}" cy="${b3.y}" r="380" fill="url(#ba)" opacity="0.6"/>
-    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${p.accent}" stroke-width="26" stroke-opacity="0.55" filter="url(#glow)"/>
-    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${p.accent}" stroke-width="7"/>
-    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#FFFFFF" stroke-opacity="0.75" stroke-width="2"/>
-    <circle cx="${cx}" cy="${cy}" r="${r + 34}" fill="none" stroke="${p.accent2}" stroke-opacity="0.35" stroke-width="1.5" stroke-dasharray="2 10"/>
-    <circle cx="${cx}" cy="${cy}" r="${r - 26}" fill="none" stroke="${p.accent2}" stroke-opacity="0.4" stroke-width="1.5"/>
-    <circle cx="${cx}" cy="${cy}" r="${r - 26}" fill="url(#bb)" opacity="0.5"/>
     <rect width="1080" height="1350" fill="url(#scan)"/>
-    <rect width="1080" height="1350" fill="url(#gt)" opacity="0.12"/>
   </svg>`;
 }
 
@@ -92,11 +86,22 @@ function render(ctx: RenderCtx) {
   const width = 940;
   const k = 0.41;
   const size = fitSize(title, { width, maxLines: 3, max: 200, min: 96, k });
-  const lines = fitSize(title, { width, maxLines: 1, max: size, min: size - 1, k }) >= size ? 1 : 2;
-  const echoes = lines === 1 ? 2 : 1;
-  const tagline = truncate(data.tagline, 60);
-  const highlights = data.highlights.slice(0, 4).map((h) => truncate(h, 22));
+  const lines = [1, 2, 3].find((m) => fitSize(title, { width, maxLines: m, max: size, min: size - 1, k }) >= size) ?? 3;
+  const echo = lines <= 2;
+  const tagline = truncate(data.tagline, 100);
+  const highlights = data.highlights.slice(0, 4).map((h) => truncate(h, 24));
   const lineBox = Math.round(size * 0.86);
+  // rough height budget, to size the ring into the free space above the title
+  const tagLines = tagline ? Math.ceil((tagline.length * 34 * 0.56) / 940) : 0;
+  const n = data.houses.length;
+  const perRow = n <= 6 ? n : Math.ceil(n / 2);
+  const logoSize = Math.max(54, Math.min(74, Math.floor((640 - 14 * (perRow - 1)) / perRow)));
+  const logosH = n > perRow ? logoSize * 2 + 14 : logoSize;
+  const used =
+    60 + (echo ? lineBox : 0) + lines * lineBox + (tagline ? 18 + tagLines * 42 : 0) + 112 +
+    Math.max(150, highlights.length * 44) + Math.max(226, 23 + 48 + 30 + 28 + logosH);
+  const freeTop = Math.max(0, (1350 - 130 - used) * 0.75);
+  const ringD = Math.min(430, Math.round((echo ? lineBox : 0) + freeTop - 24));
   const titleStyle = {
     display: "flex",
     fontFamily: "Bebas",
@@ -104,17 +109,19 @@ function render(ctx: RenderCtx) {
     lineHeight: 0.86,
     letterSpacing: 1,
     maxWidth: width,
+    textWrap: "balance",
   } as const;
   return (
     <Frame bg={p.bg}>
       <Art svg={art(ctx)} />
+      <Grain opacity={0.12} />
       <Layer style={{ padding: "66px 70px 64px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             <div style={{ display: "flex", fontFamily: "Grotesk", fontWeight: 700, fontSize: 22, letterSpacing: 6, color: p.accent }}>
               {collabLine(data.houses).toUpperCase()}
             </div>
-            <div style={{ display: "flex", fontFamily: "Grotesk", fontSize: 17, letterSpacing: 5, color: p.muted }}>
+            <div style={{ display: "flex", fontFamily: "Grotesk", fontSize: 18, letterSpacing: 5, color: p.muted }}>
               IIT MADRAS · BS DEGREE
             </div>
           </div>
@@ -130,23 +137,38 @@ function render(ctx: RenderCtx) {
             }}
           >
             <div style={{ display: "flex", width: 10, height: 10, borderRadius: 10, background: p.accent2, boxShadow: `0 0 10px ${p.accent2}` }} />
-            <div style={{ display: "flex", fontFamily: "Mono", fontSize: 17, letterSpacing: 2, color: p.ink }}>LIVE · ONLINE</div>
+            <div style={{ display: "flex", fontFamily: "Mono", fontSize: 18, letterSpacing: 2, color: p.ink }}>LIVE · ONLINE</div>
           </div>
         </div>
-        <Spacer grow={1} />
-        {Array.from({ length: echoes }, (_, i) => (
-          <div key={i} style={{ display: "flex", height: lineBox, overflow: "hidden", opacity: echoes === 2 && i === 0 ? 0.35 : 0.7 }}>
-            <div style={{ ...titleStyle, color: "transparent", WebkitTextStroke: `2px ${i === echoes - 1 ? p.accent : p.accent2}` }}>{title}</div>
+        <Spacer grow={ringD >= 140 ? 3 : 1} />
+        {ringD >= 140 ? (
+          <div style={{ display: "flex", position: "relative", height: 0 }}>
+            {/* sits on top of the solid title, behind the echo line */}
+            <img
+              alt=""
+              src={svgUri(ringSvg(ctx, ringD))}
+              width={ringD + 68}
+              height={ringD + 68}
+              style={{ position: "absolute", right: -58 + Math.round(ctx.rng() * 40), bottom: -((echo ? lineBox : 0) + 18) }}
+            />
           </div>
-        ))}
+        ) : null}
+        {echo ? (
+          <div style={{ display: "flex", height: lineBox, overflow: "hidden", opacity: 0.6 }}>
+            <div style={{ ...titleStyle, color: "transparent", WebkitTextStroke: `2px ${p.accent}` }}>{title}</div>
+          </div>
+        ) : null}
         <div style={{ ...titleStyle, color: p.ink, textShadow: `0 0 34px ${rgba(p.accent, 0.75)}` }}>{title}</div>
         {tagline ? (
-          <div style={{ display: "flex", fontFamily: "Syne", fontWeight: 600, fontSize: 34, color: p.accent2, marginTop: 18 }}>{tagline}</div>
+          <div style={{ display: "flex", fontFamily: "Syne", fontWeight: 600, fontSize: 34, lineHeight: 1.2, color: p.accent2, marginTop: 18, maxWidth: 940, textWrap: "balance" }}>
+            {tagline}
+          </div>
         ) : null}
         <div style={{ display: "flex", margin: "26px 0 22px" }}>
           { }
           <img alt="" src={svgUri(equaliser(ctx, 940, 64))} width={940} height={64} />
         </div>
+        {ringD >= 140 ? null : <Spacer grow={1} />}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 30 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 26 }}>
             <div
@@ -192,12 +214,12 @@ function render(ctx: RenderCtx) {
               <div style={{ display: "flex", fontFamily: "Grotesk", fontSize: 19, letterSpacing: 5, color: p.accent2 }}>
                 {data.mode === "online" ? "JOIN THE PARTY ON" : "VENUE"}
               </div>
-              <div style={{ display: "flex", fontFamily: "Manrope", fontWeight: 800, fontSize: 32, color: p.ink }}>{truncate(ctx.where, 40)}</div>
+              <div style={{ display: "flex", fontFamily: "Manrope", fontWeight: 800, fontSize: 32, color: p.ink }}>{truncate(ctx.where, 80)}</div>
               {ctx.linkLabel ? (
                 <div style={{ display: "flex", fontFamily: "Mono", fontSize: 21, color: p.muted }}>{truncate(ctx.linkLabel, 44)}</div>
               ) : null}
             </div>
-            <LogoRows houses={data.houses} plate="#FFFDF8" ring={p.accent} max={74} width={ctx.qr ? 640 : 940} />
+            <Houses houses={data.houses} ring={p.accent} ink={p.ink} muted={p.muted} max={74} width={ctx.qr ? 640 : 940} />
           </div>
           {ctx.qr ? (
             <div style={{ display: "flex", borderRadius: 24, padding: 4, background: p.accent, boxShadow: `0 0 30px ${rgba(p.accent, 0.7)}` }}>

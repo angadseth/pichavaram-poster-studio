@@ -140,9 +140,12 @@ function Diamond({ color, size = 10 }: { color: string; size?: number }) {
 function render(ctx: RenderCtx) {
   const { data, p, when, rng } = ctx;
   const title = truncate(data.title, 60).toUpperCase();
-  const tagline = truncate(data.tagline, 64);
+  const tagline = truncate(data.tagline, 70);
+  const longTag = tagline.length > 44; // wraps to two balanced lines
   const lh = 0.9;
-  const size = titleSize(title, PANEL.w - 80, tagline ? 236 : 290, lh);
+  const size = titleSize(title, PANEL.w - 80, !tagline ? 290 : longTag ? 196 : 236, lh);
+  // ticket line names the feature itself when it is short enough, else the event type
+  const admit = (data.title.trim().length <= 24 ? data.title.trim() : EVENT_LABELS[data.eventType]).toUpperCase();
   const ticketNo = String(Math.floor(rng() * 900000) + 100000);
   const t = TICKET;
   const hl = data.highlights.slice(0, 4).map((h) => truncate(h, 22).toUpperCase());
@@ -153,11 +156,11 @@ function render(ctx: RenderCtx) {
     <Frame bg={p.bg}>
       <Art svg={art(ctx)} />
       {/* house line on the valance */}
-      <Layer style={{ height: 80, bottom: undefined, alignItems: "center", justifyContent: "center", gap: 4 }}>
+      <Layer style={{ height: 80, bottom: undefined, alignItems: "center", justifyContent: "center", gap: 2 }}>
         <div style={{ display: "flex", fontFamily: "Grotesk", fontWeight: 700, fontSize: 21, letterSpacing: 6, color: p.ink }}>
           {truncate(collabLine(data.houses), 40).toUpperCase()}
         </div>
-        <div style={{ display: "flex", fontFamily: "Grotesk", fontWeight: 500, fontSize: 15, letterSpacing: 5, color: p.accent }}>
+        <div style={{ display: "flex", fontFamily: "Grotesk", fontWeight: 500, fontSize: 18, letterSpacing: 5, color: p.accent }}>
           IIT MADRAS · BS DEGREE
         </div>
       </Layer>
@@ -195,7 +198,21 @@ function render(ctx: RenderCtx) {
           {title}
         </div>
         {tagline ? (
-          <div style={{ display: "flex", fontFamily: "Cormorant", fontStyle: "italic", fontWeight: 600, fontSize: 36, color: p.muted, textAlign: "center" }}>
+          <div
+            style={{
+              display: "flex",
+              fontFamily: "Cormorant",
+              fontStyle: "italic",
+              fontWeight: 600,
+              fontSize: longTag ? 32 : 36,
+              lineHeight: 1.12,
+              color: p.muted,
+              textAlign: "center",
+              justifyContent: "center",
+              textWrap: "balance",
+              maxWidth: PANEL.w - 80,
+            }}
+          >
             {tagline}
           </div>
         ) : null}
@@ -212,10 +229,10 @@ function render(ctx: RenderCtx) {
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ display: "flex", fontFamily: "Grotesk", fontWeight: 700, fontSize: 17, letterSpacing: 5 }}>
-            {`ADMIT ALL · ${EVENT_LABELS[data.eventType].toUpperCase()}`}
+          <div style={{ display: "flex", fontFamily: "Grotesk", fontWeight: 700, fontSize: 18, letterSpacing: 4 }}>
+            {`ADMIT ALL · ${admit}`}
           </div>
-          <div style={{ display: "flex", fontFamily: "Mono", fontSize: 16, letterSpacing: 2, opacity: 0.75 }}>{`Nº ${ticketNo}`}</div>
+          <div style={{ display: "flex", fontFamily: "Mono", fontSize: 18, letterSpacing: 1, opacity: 0.75 }}>{`Nº ${ticketNo}`}</div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 26 }}>
           <div style={{ display: "flex", fontFamily: "Bebas", fontSize: 138, lineHeight: 0.8, paddingTop: 12 }}>{when.day}</div>
@@ -246,12 +263,12 @@ function render(ctx: RenderCtx) {
         ) : (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginBottom: 86 }}>
             <div style={{ display: "flex", fontFamily: "Bebas", fontSize: 44, letterSpacing: 6 }}>ADMIT ONE</div>
-            <div style={{ display: "flex", fontFamily: "Mono", fontSize: 15 }}>{`Nº ${ticketNo}`}</div>
+            <div style={{ display: "flex", fontFamily: "Mono", fontSize: 18 }}>{`Nº ${ticketNo}`}</div>
           </div>
         )}
       </Layer>
       {/* billing block + where + logos */}
-      <Layer style={{ top: t.y + t.h + 30, padding: "0 90px 50px", alignItems: "center" }}>
+      <Layer style={{ top: t.y + t.h + 22, padding: "0 90px 44px", alignItems: "center", justifyContent: "space-evenly" }}>
         {hl.length ? (
           <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: "4px 20px", maxWidth: 900 }}>
             {hl.map((h, i) => (
@@ -262,17 +279,12 @@ function render(ctx: RenderCtx) {
             ))}
           </div>
         ) : null}
-        <div style={{ display: "flex", flexGrow: 1, minHeight: 34, alignItems: "center", justifyContent: "center", gap: 14 }}>
-          <div style={{ display: "flex", width: 120, height: 1, background: p.accent, opacity: 0.5 }} />
-          <Diamond color={p.accent} size={7} />
-          <div style={{ display: "flex", width: 120, height: 1, background: p.accent, opacity: 0.5 }} />
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, marginBottom: 22 }}>
-          <div style={{ display: "flex", fontFamily: "Grotesk", fontWeight: 700, fontSize: 19, letterSpacing: 6, color: p.accent }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16, fontFamily: "Grotesk", fontWeight: 700, fontSize: 20, letterSpacing: 6, color: p.accent }}>
             {`${data.mode === "online" ? "STREAMING ON" : "SCREENING AT"} ${truncate(ctx.where, 44).toUpperCase()}`}
           </div>
           {ctx.linkLabel ? (
-            <div style={{ display: "flex", fontFamily: "Mono", fontSize: 24, color: p.ink }}>{truncate(ctx.linkLabel, 44)}</div>
+            <div style={{ display: "flex", fontFamily: "Mono", fontSize: 30, color: p.ink }}>{truncate(ctx.linkLabel, 44)}</div>
           ) : null}
         </div>
         <Logos houses={data.houses} plate="#FFFDF8" ring={p.accent} max={74} gap={16} width={900} />

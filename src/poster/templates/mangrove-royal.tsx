@@ -90,8 +90,8 @@ function art({ p, rng }: RenderCtx) {
   const water = 1252;
   // leaf() writes fill="..." verbatim, so this sneaks in a fill-opacity too
   const leafFill = `${p.accent}" fill-opacity="0.3`;
-  const left = mangrove(rng, 186 + rng() * 24, water, 214 + rng() * 26, p.accent, leafFill, 1.6);
-  const right = mangrove(rng, 880 + rng() * 20, water, 196 + rng() * 26, p.accent, leafFill, 1.6);
+  const left = mangrove(rng, 162 + rng() * 16, water, 214 + rng() * 26, p.accent, leafFill, 1.6);
+  const right = mangrove(rng, 902 + rng() * 16, water, 196 + rng() * 26, p.accent, leafFill, 1.6);
   const trees = `${left}${right}`;
   const c = corner(p.accent);
   return `<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350">
@@ -151,11 +151,11 @@ function render(ctx: RenderCtx) {
   const title = truncate(data.title, 60);
   const size = fitSize(title, { width: 820, maxLines: 3, max: 150, min: 58, k: 0.56 });
   const tagline = truncate(data.tagline, 60);
-  const venue = truncate(ctx.where, 80);
-  const whereW = ctx.qr ? 320 : 400;
+  const venue = ctx.where.trim();
+  const whereW = ctx.qr ? 340 : 420;
   const vSize = fitSize(venue, { width: whereW, maxLines: 3, max: 40, min: 26, k: 0.48 });
-  const label = { display: "flex", fontFamily: "Grotesk", fontWeight: 700, fontSize: 16, letterSpacing: 5, color: p.accent } as const;
-  const vrule = <div style={{ display: "flex", width: 1.5, height: 150, background: p.accent, opacity: 0.6, margin: "0 38px" }} />;
+  const label = { display: "flex", fontFamily: "Grotesk", fontWeight: 700, fontSize: 18, letterSpacing: 4, color: p.accent } as const;
+  const vrule = <div style={{ display: "flex", width: 1.5, height: 150, background: p.accent, opacity: 0.6, margin: "0 32px" }} />;
   return (
     <Frame bg={p.bg}>
       <Art svg={art(ctx)} />
@@ -166,7 +166,7 @@ function render(ctx: RenderCtx) {
         <div style={{ display: "flex", fontFamily: "Grotesk", fontWeight: 700, fontSize: 18, letterSpacing: 6, color: p.accent, marginTop: 16 }}>
           {collabLine(data.houses).toUpperCase()}
         </div>
-        <div style={{ display: "flex", fontFamily: "Grotesk", fontSize: 14, letterSpacing: 5, color: p.muted, marginTop: 8 }}>IIT MADRAS · BS DEGREE</div>
+        <div style={{ display: "flex", fontFamily: "Grotesk", fontSize: 18, letterSpacing: 4, color: p.muted, marginTop: 8 }}>IIT MADRAS · BS DEGREE</div>
         <Spacer />
         {tagline ? (
           <div style={{ display: "flex", fontFamily: "Cormorant", fontStyle: "italic", fontWeight: 600, fontSize: 44, color: p.muted, marginBottom: 8, textAlign: "center", maxWidth: 860, wordBreak: "break-word" }}>
@@ -184,7 +184,7 @@ function render(ctx: RenderCtx) {
           <div style={{ display: "flex", width: 110, height: 1.5, background: p.accent }} />
         </div>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 200, flexShrink: 0 }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 190, flexShrink: 0 }}>
             <div style={label}>{when.weekdayLong.toUpperCase()}</div>
             <div style={{ display: "flex", fontFamily: "Playfair", fontStyle: "italic", fontWeight: 700, fontSize: 92, lineHeight: 1.3, color: p.ink }}>{when.day}</div>
             <div style={{ display: "flex", fontFamily: "Grotesk", fontWeight: 700, fontSize: 20, letterSpacing: 5, color: p.ink }}>{`${when.month} ${when.year}`}</div>
@@ -194,9 +194,9 @@ function render(ctx: RenderCtx) {
             <div style={label}>{data.mode === "online" ? "JOIN ONLINE" : "THE VENUE"}</div>
             <div style={{ display: "flex", fontFamily: "Cormorant", fontWeight: 700, fontSize: vSize, lineHeight: 1.1, color: p.ink, maxWidth: whereW, wordBreak: "break-word" }}>{venue}</div>
             {ctx.linkLabel ? (
-              <div style={{ display: "flex", fontFamily: "Mono", fontSize: 16, color: p.muted }}>{truncate(ctx.linkLabel, 32)}</div>
+              <div style={{ display: "flex", fontFamily: "Mono", fontSize: 19, color: p.muted }}>{truncate(ctx.linkLabel, 32)}</div>
             ) : null}
-            <div style={{ display: "flex", fontFamily: "Grotesk", fontWeight: 500, fontSize: 22, color: p.ink, marginTop: 6 }}>{when.timeRange}</div>
+            <div style={{ display: "flex", fontFamily: "Grotesk", fontWeight: 500, fontSize: 24, color: p.ink, marginTop: 6 }}>{when.timeRange}</div>
           </div>
           {ctx.qr ? vrule : null}
           <Qr ctx={ctx} ink={p.muted} size={116} label="Scan" />
@@ -213,7 +213,8 @@ function render(ctx: RenderCtx) {
         ) : null}
         <Spacer grow={0.7} />
         <div style={{ display: "flex", justifyContent: "center", marginTop: 24 }}>
-          <Logos houses={data.houses} plate="#FFFDF8" ring={p.accent} max={74} gap={16} width={740} />
+          {/* the row must fit between the two mangroves */}
+          <Logos houses={data.houses} plate="#FFFDF8" ring={p.accent} max={74} gap={16} width={440} />
         </div>
       </Layer>
     </Frame>

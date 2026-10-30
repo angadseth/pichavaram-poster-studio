@@ -1,7 +1,7 @@
 import { Art, Frame, Grain, Layer, Logos, Qr, Spacer, collabLine } from "../kit";
 import type { RenderCtx, Template } from "../types";
 import { EVENT_LABELS } from "../types";
-import { fitSize, svgUri, truncate } from "../util";
+import { fitSize, truncate } from "../util";
 
 function rgb(hex: string) {
   const n = parseInt(hex.slice(1), 16);
@@ -73,34 +73,24 @@ function art({ p, rng }: RenderCtx) {
   </svg>`;
 }
 
-function barcode({ p, rng }: RenderCtx) {
-  let x = 0;
-  const bars: string[] = [];
-  while (x < 166) {
-    const w = 1 + Math.floor(rng() * 4);
-    bars.push(`<rect x="${x}" y="0" width="${w}" height="${rng() > 0.92 ? 104 : 96}" fill="${p.ink}"/>`);
-    x += w + 1 + Math.floor(rng() * 3);
-  }
-  return svgUri(`<svg xmlns="http://www.w3.org/2000/svg" width="170" height="104">${bars.join("")}</svg>`);
-}
-
 function render(ctx: RenderCtx) {
   const { data, p, when } = ctx;
   const monthNum = data.date.split("-")[1];
   const head = truncate(data.title, 60).toUpperCase();
   const size = fitSize(head, { width: 960, maxLines: 3, max: 196, min: 80, k: 0.5 });
   const tagline = truncate(data.tagline, 72);
-  const venue = truncate(ctx.where, 80);
-  const vSize = fitSize(venue, { width: 380, maxLines: 3, max: 40, min: 24, k: 0.5 });
-  const edition = data.eventType === "others" ? "SPECIAL" : EVENT_LABELS[data.eventType].toUpperCase();
-  const label = { display: "flex", fontFamily: "Grotesk", fontWeight: 700, fontSize: 15, letterSpacing: 4, color: p.accent } as const;
+  const venue = ctx.where.trim();
+  const vSize = fitSize(venue, { width: ctx.qr ? 380 : 580, maxLines: 3, max: 44, min: 24, k: 0.5 });
+  // the sticker names the event type; "Others" has no meaningful label, so it is left off
+  const edition = data.eventType === "others" ? undefined : EVENT_LABELS[data.eventType].toUpperCase();
+  const label = { display: "flex", fontFamily: "Grotesk", fontWeight: 700, fontSize: 18, letterSpacing: 4, color: p.accent } as const;
   const rule = <div style={{ display: "flex", width: 1, alignSelf: "stretch", background: rgba(p.ink, 0.35), margin: "0 28px" }} />;
   return (
     <Frame bg={p.bg}>
       <Art svg={art(ctx)} />
       <Grain opacity={0.13} />
       <Layer style={{ padding: "44px 56px 50px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "Grotesk", fontWeight: 700, fontSize: 15, letterSpacing: 4, color: p.ink }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "Grotesk", fontWeight: 700, fontSize: 18, letterSpacing: 3, color: p.ink }}>
           <div style={{ display: "flex" }}>{`ISSUE Nº ${when.day}·${monthNum}`}</div>
           <div style={{ display: "flex", color: p.accent }}>{truncate(collabLine(data.houses).toUpperCase(), 36)}</div>
           <div style={{ display: "flex" }}>IITM · BS DEGREE</div>
@@ -109,7 +99,7 @@ function render(ctx: RenderCtx) {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
           <div style={{ display: "flex", fontFamily: "DMSerif", fontSize: 112, lineHeight: 1, letterSpacing: -3, color: p.ink }}>Pichavaram</div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, paddingBottom: 14 }}>
-            <div style={{ display: "flex", fontFamily: "Grotesk", fontWeight: 700, fontSize: 17, letterSpacing: 4, color: p.accent }}>
+            <div style={{ display: "flex", fontFamily: "Grotesk", fontWeight: 700, fontSize: 18, letterSpacing: 3, color: p.accent }}>
               {`${when.weekday} · ${when.day} ${when.monthLong.toUpperCase()} ${when.year}`}
             </div>
             <div style={{ display: "flex", fontFamily: "DMSerif", fontStyle: "italic", fontSize: 26, color: p.muted }}>the house journal</div>
@@ -127,6 +117,7 @@ function render(ctx: RenderCtx) {
               </div>
             ))}
           </div>
+          {edition ? (
           <div
             style={{
               display: "flex",
@@ -141,10 +132,11 @@ function render(ctx: RenderCtx) {
               marginRight: 10,
             }}
           >
-            <div style={{ display: "flex", fontFamily: "Grotesk", fontWeight: 700, fontSize: 14, letterSpacing: 3, color: p.bg }}>THE</div>
+            <div style={{ display: "flex", fontFamily: "Grotesk", fontWeight: 700, fontSize: 18, letterSpacing: 3, color: p.bg }}>THE</div>
             <div style={{ display: "flex", fontFamily: "Anton", fontSize: edition.length > 7 ? 30 : 38, lineHeight: 1.05, color: p.bg }}>{edition}</div>
             <div style={{ display: "flex", fontFamily: "DMSerif", fontStyle: "italic", fontSize: 26, lineHeight: 1, color: p.bg }}>edition</div>
           </div>
+          ) : null}
         </div>
         <Spacer />
         <div style={{ display: "flex", fontFamily: "Anton", fontSize: size, lineHeight: 0.92, color: p.ink, maxWidth: 968, letterSpacing: -1, wordBreak: "break-word" }}>{head}</div>
@@ -164,27 +156,29 @@ function render(ctx: RenderCtx) {
           {rule}
           <div style={{ display: "flex", flexDirection: "column", flexGrow: 1, flexShrink: 1, minWidth: 0, gap: 8 }}>
             <div style={label}>{data.mode === "online" ? "JOIN ON" : "WHERE"}</div>
-            <div style={{ display: "flex", fontFamily: "DMSerif", fontSize: vSize, lineHeight: 1.12, color: p.ink, maxWidth: 400, wordBreak: "break-word" }}>{venue}</div>
+            <div style={{ display: "flex", fontFamily: "DMSerif", fontSize: vSize, lineHeight: 1.12, color: p.ink, maxWidth: ctx.qr ? 400 : 600, wordBreak: "break-word" }}>{venue}</div>
             {ctx.linkLabel ? (
-              <div style={{ display: "flex", fontFamily: "Mono", fontSize: 18, color: p.muted }}>{truncate(ctx.linkLabel, 34)}</div>
+              <div style={{ display: "flex", fontFamily: "Mono", fontSize: 20, color: p.muted }}>{truncate(ctx.linkLabel, 34)}</div>
             ) : null}
           </div>
-          {rule}
-          {ctx.qr ? (
-            <Qr ctx={ctx} ink={p.muted} size={118} label="Scan" />
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "4px 0" }}>
-              { }
-              <img alt="" src={barcode(ctx)} width={170} height={104} />
-              <div style={{ display: "flex", fontFamily: "Mono", fontSize: 15, letterSpacing: 2, color: p.muted }}>{`${when.day}${monthNum}${when.year}`}</div>
-            </div>
-          )}
+          {ctx.qr ? rule : null}
+          <Qr ctx={ctx} ink={p.muted} size={118} label="Scan" />
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: 26, gap: 24 }}>
-          <div style={{ display: "flex", flexShrink: 0 }}>
-            <Logos houses={data.houses} plate="#FFFDF8" ring={p.accent} max={64} gap={14} width={620} justify="flex-start" />
-          </div>
-          <div style={{ display: "flex", fontFamily: "Grotesk", fontWeight: 700, fontSize: 14, letterSpacing: 4, color: p.muted, paddingBottom: 6 }}>
+          {data.houses.length === 1 ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+              <Logos houses={data.houses} plate="#FFFDF8" ring={p.accent} max={76} />
+              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <div style={label}>PUBLISHED BY</div>
+                <div style={{ display: "flex", fontFamily: "DMSerif", fontStyle: "italic", fontSize: 32, color: p.ink }}>{data.houses[0].name}</div>
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexShrink: 0 }}>
+              <Logos houses={data.houses} plate="#FFFDF8" ring={p.accent} max={64} gap={14} width={620} justify="flex-start" />
+            </div>
+          )}
+          <div style={{ display: "flex", fontFamily: "Grotesk", fontWeight: 700, fontSize: 18, letterSpacing: 3, color: p.muted, paddingBottom: 6 }}>
             {data.mode === "online" ? "AN ONLINE EVENT" : "AN IN-PERSON EVENT"}
           </div>
         </div>

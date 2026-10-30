@@ -108,14 +108,15 @@ function render(ctx: RenderCtx) {
   const paper = PAPER[p.id] ?? PAPER.sandstone;
   const light = p.id === "sandstone";
   const title = truncate(data.title, 60);
-  const size = fitSize(title, { width: 930, maxLines: 3, max: 140, min: 64, k: 0.56 });
+  const size = fitSize(title, { width: 930, maxLines: 3, max: 156, min: 64, k: 0.56 });
   const words = title.split(" ");
   const last = words.length > 1 ? words.pop() : undefined;
   const tagline = truncate(data.tagline, 64);
-  const venue = truncate(ctx.where, 80);
+  // keep short numbers glued to the word before them ("Sector 1" never splits)
+  const venue = ctx.where.trim().replace(/\s+/g, " ").replace(/ (\d{1,4})\b/g, " $1");
   const vSize = fitSize(venue, { width: 380, maxLines: 3, max: 36, min: 24, k: 0.56 });
   const cardW = 940 - 230 - 26;
-  const cardH = 290;
+  const cardH = 310;
   const region = data.region?.trim();
   return (
     <Frame bg={p.bg}>
@@ -127,7 +128,7 @@ function render(ctx: RenderCtx) {
             <div style={{ display: "flex", fontFamily: "Grotesk", fontWeight: 700, fontSize: 20, letterSpacing: 5, color: p.accent }}>
               {collabLine(data.houses).toUpperCase()}
             </div>
-            <div style={{ display: "flex", fontFamily: "Grotesk", fontSize: 16, letterSpacing: 5, color: p.muted }}>IIT MADRAS · BS DEGREE</div>
+            <div style={{ display: "flex", fontFamily: "Grotesk", fontSize: 18, letterSpacing: 4, color: p.muted }}>IIT MADRAS · BS DEGREE</div>
           </div>
           <div
             style={{
@@ -149,7 +150,7 @@ function render(ctx: RenderCtx) {
             {truncate(region || "In person", 28)}
           </div>
         </div>
-        <Spacer grow={2} />
+        <Spacer grow={1} />
         {tagline ? (
           <div style={{ display: "flex", fontFamily: "Cormorant", fontStyle: "italic", fontWeight: 600, fontSize: 46, color: p.muted, marginBottom: 10, maxWidth: 900, wordBreak: "break-word" }}>
             {tagline}
@@ -234,7 +235,7 @@ function render(ctx: RenderCtx) {
                   {data.mode === "online" ? "JOIN ON" : "MEET US AT"}
                 </div>
               </div>
-              <div style={{ display: "flex", fontFamily: "Manrope", fontWeight: 800, fontSize: vSize, lineHeight: 1.18, color: p.ink, marginTop: 12, maxWidth: 380, wordBreak: "break-word" }}>
+              <div style={{ display: "flex", fontFamily: "Manrope", fontWeight: 800, fontSize: vSize, lineHeight: 1.18, color: p.ink, marginTop: 12, maxWidth: 380, wordBreak: "break-word", textWrap: "balance" }}>
                 {venue}
               </div>
               {ctx.linkLabel ? (
@@ -242,24 +243,50 @@ function render(ctx: RenderCtx) {
               ) : null}
               <Spacer />
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                <div style={{ display: "flex", fontFamily: "Grotesk", fontWeight: 700, fontSize: 16, letterSpacing: 5, color: p.muted }}>FROM</div>
+                <div style={{ display: "flex", fontFamily: "Grotesk", fontWeight: 700, fontSize: 18, letterSpacing: 4, color: p.muted }}>FROM</div>
                 <div style={{ display: "flex", fontFamily: "Grotesk", fontWeight: 700, fontSize: 28, color: p.ink }}>{when.timeRange}</div>
               </div>
             </div>
           </div>
         </div>
-        <div style={{ display: "flex", marginTop: 28 }}>
+        <div style={{ display: "flex", marginTop: 32 }}>
           <Highlights items={data.highlights} color={p.ink} dot={p.accent} font="Grotesk" size={23} />
         </div>
         <Spacer grow={1} />
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 30, marginTop: 24 }}>
-          <div style={{ display: "flex", flexShrink: 0 }}>
-            <Logos houses={data.houses} plate={paper.sheet} ring={p.accent} max={76} gap={16} width={ctx.qr ? 640 : 700} justify="flex-start" />
-          </div>
+          {data.houses.length === 1 ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+              <Logos houses={data.houses} plate={paper.sheet} ring={p.accent} max={92} />
+              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <div style={{ display: "flex", fontFamily: "Grotesk", fontWeight: 700, fontSize: 18, letterSpacing: 4, color: p.accent }}>HOSTED BY</div>
+                <div style={{ display: "flex", fontFamily: "Cormorant", fontStyle: "italic", fontWeight: 700, fontSize: 36, color: p.ink }}>{data.houses[0].name}</div>
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexShrink: 0 }}>
+              <Logos houses={data.houses} plate={paper.sheet} ring={p.accent} max={76} gap={16} width={ctx.qr ? 640 : 700} justify="flex-start" />
+            </div>
+          )}
           {ctx.qr ? (
             <Qr ctx={ctx} ink={p.muted} size={128} />
           ) : (
-            <div style={{ display: "flex", fontFamily: "Caveat", fontWeight: 700, fontSize: 46, color: paper.sheet, transform: "rotate(-5deg)", marginBottom: 6, marginRight: 30 }}>
+            <div
+              style={{
+                display: "flex",
+                padding: "4px 22px 8px",
+                borderRadius: 999,
+                background: paper.sheet,
+                boxShadow: `0 10px 24px ${rgba("#2A1A12", 0.22)}`,
+                fontFamily: "Caveat",
+                fontWeight: 700,
+                fontSize: 42,
+                color: paper.ink,
+                transform: "rotate(-5deg)",
+                position: "absolute",
+                right: 70,
+                bottom: 150,
+              }}
+            >
               see you there!
             </div>
           )}

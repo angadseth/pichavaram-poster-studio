@@ -5,7 +5,7 @@ import { fitSize, truncate } from "../util";
 function art({ p, rng }: RenderCtx) {
   const rings = Array.from({ length: 26 }, (_, i) => {
     const r = 140 + i * 11;
-    return `<circle cx="880" cy="300" r="${r}" fill="none" stroke="${p.accent}" stroke-opacity="${(0.05 + (i % 3) * 0.04).toFixed(2)}" stroke-width="${i % 4 === 0 ? 2 : 1}"/>`;
+    return `<circle cx="880" cy="230" r="${r}" fill="none" stroke="${p.accent}" stroke-opacity="${(0.05 + (i % 3) * 0.04).toFixed(2)}" stroke-width="${i % 4 === 0 ? 2 : 1}"/>`;
   }).join("");
   const bars = Array.from({ length: 54 }, (_, i) => {
     const h = 20 + Math.abs(Math.sin(i * 0.55 + rng() * 2)) * 120 * (0.4 + rng() * 0.6);
@@ -15,14 +15,16 @@ function art({ p, rng }: RenderCtx) {
     <defs>
       <radialGradient id="g" cx="0.75" cy="0.2" r="0.95"><stop offset="0" stop-color="${p.bg2}"/><stop offset="1" stop-color="${p.bg}"/></radialGradient>
       <radialGradient id="l" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="${p.accent2}"/><stop offset="1" stop-color="${p.accent2}" stop-opacity="0.6"/></radialGradient>
-      <filter id="b"><feGaussianBlur stdDeviation="60"/></filter>
+      <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="${p.accent2}" stop-opacity="0.22"/><stop offset="1" stop-color="${p.accent2}" stop-opacity="0"/></radialGradient>
+      <radialGradient id="calm" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="${p.bg}" stop-opacity="0.7"/><stop offset="1" stop-color="${p.bg}" stop-opacity="0"/></radialGradient>
     </defs>
     <rect width="1080" height="1350" fill="url(#g)"/>
-    <circle cx="880" cy="300" r="440" fill="#000" fill-opacity="0.35"/>
+    <circle cx="880" cy="230" r="440" fill="#000" fill-opacity="0.35"/>
     ${rings}
-    <circle cx="880" cy="300" r="118" fill="url(#l)"/>
-    <circle cx="880" cy="300" r="14" fill="${p.bg}"/>
-    <circle cx="180" cy="1180" r="260" fill="${p.accent2}" fill-opacity="0.18" filter="url(#b)"/>
+    <circle cx="880" cy="230" r="112" fill="url(#l)"/>
+    <circle cx="880" cy="230" r="14" fill="${p.bg}"/>
+    <ellipse cx="260" cy="560" rx="720" ry="380" fill="url(#calm)"/>
+    <circle cx="180" cy="1180" r="420" fill="url(#glow)"/>
     ${bars}
   </svg>`;
 }
@@ -32,6 +34,9 @@ function render(ctx: RenderCtx) {
   const title = truncate(data.title, 60);
   const size = fitSize(title, { width: 940, maxLines: 3, max: 150, min: 64, k: 0.56 });
   const tagline = truncate(data.tagline, 70);
+  const tagSize = fitSize(tagline, { width: 700, maxLines: 2, max: 52, min: 36, k: 0.42 });
+  const venueSize = fitSize(ctx.where, { width: ctx.qr ? 640 : 900, maxLines: 2, max: 32, min: 24, k: 0.55 });
+  const solo = data.houses.length === 1;
   return (
     <Frame bg={p.bg}>
       <Art svg={art(ctx)} />
@@ -47,11 +52,11 @@ function render(ctx: RenderCtx) {
         </div>
         <Spacer grow={1} />
         {tagline ? (
-          <div style={{ display: "flex", fontFamily: "Cormorant", fontStyle: "italic", fontWeight: 600, fontSize: 52, color: p.muted, marginBottom: 6 }}>
+          <div style={{ display: "flex", fontFamily: "Cormorant", fontStyle: "italic", fontWeight: 600, fontSize: tagSize, color: p.muted, marginBottom: 6, maxWidth: 700, textWrap: "balance" }}>
             {tagline}
           </div>
         ) : null}
-        <div style={{ display: "flex", fontFamily: "Playfair", fontWeight: 900, fontSize: size, lineHeight: 0.98, color: p.ink, letterSpacing: -2, maxWidth: 940 }}>
+        <div style={{ display: "flex", fontFamily: "Playfair", fontWeight: 900, fontSize: size, lineHeight: 0.98, color: p.ink, letterSpacing: -2, maxWidth: 940, textWrap: "balance" }}>
           {title}
         </div>
         <div style={{ display: "flex", width: 160, height: 3, background: p.accent, margin: "34px 0 30px" }} />
@@ -68,19 +73,29 @@ function render(ctx: RenderCtx) {
         <div style={{ display: "flex", marginTop: 30 }}>
           <Highlights items={data.highlights} color={p.ink} dot={p.accent} />
         </div>
-        <Spacer grow={1} />
+        <Spacer grow={0.5} />
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 30 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 18, flexShrink: 1 }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               <div style={{ display: "flex", fontFamily: "Grotesk", fontSize: 20, letterSpacing: 5, color: p.accent }}>
                 {data.mode === "online" ? "JOIN ON" : "VENUE"}
               </div>
-              <div style={{ display: "flex", fontFamily: "Manrope", fontWeight: 800, fontSize: 32, color: p.ink }}>{truncate(ctx.where, 40)}</div>
+              <div style={{ display: "flex", fontFamily: "Manrope", fontWeight: 800, fontSize: venueSize, color: p.ink, maxWidth: ctx.qr ? 640 : 900, lineHeight: 1.2 }}>{ctx.where}</div>
               {ctx.linkLabel ? (
                 <div style={{ display: "flex", fontFamily: "Mono", fontSize: 22, color: p.muted }}>{truncate(ctx.linkLabel, 44)}</div>
               ) : null}
             </div>
-            <Logos houses={data.houses} plate="#FFFDF8" ring={p.accent} max={78} width={ctx.qr ? 700 : 940} justify="flex-start" />
+            {solo ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+                <Logos houses={data.houses} plate="#FFFDF8" ring={p.accent} max={78} width={78} justify="flex-start" />
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <div style={{ display: "flex", fontFamily: "Cormorant", fontWeight: 700, fontSize: 34, color: p.ink }}>Pichavaram House</div>
+                  <div style={{ display: "flex", fontFamily: "Grotesk", fontSize: 18, letterSpacing: 3, color: p.muted }}>IIT MADRAS BS DEGREE</div>
+                </div>
+              </div>
+            ) : (
+              <Logos houses={data.houses} plate="#FFFDF8" ring={p.accent} max={78} width={ctx.qr ? 700 : 940} justify="flex-start" />
+            )}
           </div>
           <Qr ctx={ctx} ink={p.muted} size={140} />
         </div>

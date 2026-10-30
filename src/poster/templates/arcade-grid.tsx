@@ -1,4 +1,4 @@
-import { Art, Frame, Layer, Qr, Spacer, collabLine } from "../kit";
+import { Art, Frame, Grain, Layer, Logos, Qr, Spacer, collabLine } from "../kit";
 import type { PosterHouse, RenderCtx, Template } from "../types";
 import { fitSize, truncate } from "../util";
 
@@ -7,50 +7,55 @@ function rgba(hex: string, a: number) {
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
 }
 
-// Turbulence on one small stitched tile, repeated: same look as kit Grain at a fraction of the cost.
-const GRAIN = `<filter id="gn" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><pattern id="gt" width="240" height="240" patternUnits="userSpaceOnUse"><rect width="240" height="240" filter="url(#gn)"/></pattern>`;
-
-/** Logo plates in explicit balanced rows (5+5, not 7+3). */
-function LogoRows({ houses, plate, ring, max, width, gap = 12 }: { houses: PosterHouse[]; plate: string; ring: string; max: number; width: number; gap?: number }) {
-  const n = houses.length;
-  const perRow = n <= 6 ? n : Math.ceil(n / 2);
-  const size = Math.max(50, Math.min(max, Math.floor((width - gap * (perRow - 1)) / perRow)));
-  const rows = [houses.slice(0, perRow), houses.slice(perRow)].filter((r) => r.length);
+/** Lone Pichavaram logo gets a wordmark so it reads as a sign-off, not a leftover. */
+function Houses({ houses, ring, ink, muted }: { houses: PosterHouse[]; ring: string; ink: string; muted: string }) {
+  const logos = <Logos houses={houses} plate="#FFFDF8" ring={ring} max={66} gap={12} width={700} justify="flex-start" />;
+  if (houses.length > 1) return logos;
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap }}>
-      {rows.map((row, ri) => (
-        <div key={ri} style={{ display: "flex", gap }}>
-          {row.map((h) => (
-            <div
-              key={h.name}
-              style={{ display: "flex", width: size, height: size, borderRadius: size, background: plate, border: `2px solid ${ring}`, alignItems: "center", justifyContent: "center", overflow: "hidden" }}
-            >
-              { }
-              <img alt="" src={h.logo} width={size - 12} height={size - 12} style={{ objectFit: "contain" }} />
-            </div>
-          ))}
-        </div>
-      ))}
+    <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+      {logos}
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <div style={{ display: "flex", fontFamily: "Unbounded", fontWeight: 800, fontSize: 24, color: ink }}>{houses[0].name.toUpperCase()}</div>
+        <div style={{ display: "flex", fontFamily: "Grotesk", fontWeight: 700, fontSize: 18, letterSpacing: 3, color: muted }}>HOST HOUSE · READY</div>
+      </div>
     </div>
   );
 }
 
-// Original pixel sprites: '#' = main colour, '+' = second colour, '.' = empty.
-const SPRITES = {
-  critter: ["...####...", ".########.", "##+##+####", "##########", "#.######.#", "#.#....#.#", "...##.##.."],
-  stick: ["...++...", "..++++..", "..++++..", "...++...", "...##...", "...##...", ".######.", "########", "########"],
-  coin: [".####.", "##++##", "#+##+#", "#+##+#", "##++##", ".####."],
-  heart: [".##.##.", "#######", "#######", ".#####.", "..###..", "...#..."],
-};
+// 4×4 ordered-dither thresholds: the sun is shaded the way 8-bit hardware had to.
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((v) => (v + 0.5) / 16);
 
-function sprite(rows: string[], x: number, y: number, px: number, c1: string, c2: string) {
-  return rows
-    .flatMap((row, j) =>
-      [...row].map((ch, i) =>
-        ch === "." ? "" : `<rect x="${x + i * px}" y="${y + j * px}" width="${px}" height="${px}" fill="${ch === "#" ? c1 : c2}"/>`,
-      ),
-    )
-    .join("");
+function mix(a: string, b: string, t: number) {
+  const pa = parseInt(a.slice(1), 16);
+  const pb = parseInt(b.slice(1), 16);
+  const ch = (sh: number) => Math.round(((pa >> sh) & 255) * (1 - t) + ((pb >> sh) & 255) * t);
+  return `rgb(${ch(16)},${ch(8)},${ch(0)})`;
+}
+
+/** Pixel sun built from square blocks: banded palette, dithered only where bands meet, scanline gaps near the horizon. */
+function pixelSun(cx: number, cy: number, r: number, horizon: number, B: number, top: string, bottom: string) {
+  const levels = 5;
+  const tones = Array.from({ length: levels }, (_, i) => mix(top, bottom, i / (levels - 1)));
+  const y0 = cy - r;
+  const rows = Math.ceil((horizon - y0) / B);
+  const out: string[] = [];
+  for (let j = 0; j < rows; j++) {
+    const y = y0 + j * B;
+    const fromBottom = rows - 1 - j;
+    if (fromBottom < 12 && fromBottom % 3 === 1) continue;
+    const v = ((j + 0.5) / rows) * (levels - 1);
+    const base = Math.min(levels - 2, Math.floor(v));
+    // only the outer 35% of each band is dithered, the rest stays flat
+    const frac = Math.max(0, Math.min(1, (v - base - 0.65) / 0.35));
+    const dy = y + B / 2 - cy;
+    const half = Math.sqrt(Math.max(0, r * r - dy * dy));
+    const n = Math.floor(half / B);
+    for (let i = -n; i < n; i++) {
+      const th = BAYER[(j % 4) * 4 + ((i % 4) + 4) % 4];
+      out.push(`<rect x="${cx + i * B}" y="${y}" width="${B}" height="${B}" fill="${frac > th ? tones[base + 1] : tones[base]}"/>`);
+    }
+  }
+  return out.join("");
 }
 
 /** Horizon line: lifted when the HUD panel grows (two logo rows, wrapped chips) so the panel never covers the sun. */
@@ -64,7 +69,7 @@ function horizon({ data }: RenderCtx) {
 function art(ctx: RenderCtx) {
   const { p, rng } = ctx;
   const H = horizon(ctx);
-  const sunR = 236;
+  const sunR = 204;
   const sx = 540;
   // stars: dim pixel dots anywhere; brighter pluses only beside the sun, clear of the title zone
   const clearOfText = (x: number, y: number) => !(y > 50 && y < 120 && (x < 520 || x > 860)) && !(y > 140 && y < H - 250 && x > 70 && x < 1010);
@@ -79,27 +84,16 @@ function art(ctx: RenderCtx) {
     }
     return `<rect x="${x}" y="${y}" width="3" height="3" fill="${p.ink}" fill-opacity="${(0.25 + rng() * 0.4).toFixed(2)}"/>`;
   }).join("");
-  const pluses = Array.from({ length: 6 }, (_, i) => {
-    const left = i % 2 === 0;
-    const x = Math.round(left ? 30 + rng() * 240 : 800 + rng() * 240);
-    const y = Math.round(H - 232 + rng() * 72);
-    return `<path d="M${x + 4} ${y}h4v4h4v4h-4v4h-4v-4h-4v-4h4z" fill="${p.accent2}" fill-opacity="${(0.4 + rng() * 0.5).toFixed(2)}"/>`;
-  }).join("");
-  const stars = dots + pluses;
-  // sun stripes get thicker towards the horizon
-  const cuts = Array.from({ length: 7 }, (_, i) => {
-    const y = H - 18 - i * 30;
-    const h = 12 - i * 1.6;
-    return `<rect x="0" y="${y.toFixed(1)}" width="1080" height="${Math.max(2, h).toFixed(1)}" fill="#000"/>`;
-  }).join("");
+  const stars = dots;
   // stepped pixel mountains
   const step = 24;
   let ridge = `M0 ${H}`;
   let hgt = 30;
   for (let x = 0; x <= 1080; x += step) {
     const toCentre = Math.abs(x + step / 2 - sx);
-    const cap = toCentre < sunR - 30 ? 50 : 150;
-    hgt = Math.max(12, Math.min(cap, hgt + (rng() < 0.5 ? -1 : 1) * step * (0.5 + rng())));
+    // hills stop short of the sun so it sits cleanly on the horizon
+    const cap = toCentre < sunR + 36 ? 0 : 150;
+    hgt = Math.max(cap ? 12 : 0, Math.min(cap, hgt + (rng() < 0.5 ? -1 : 1) * step * (0.5 + rng())));
     ridge += ` V${Math.round(H - hgt)} H${x + step}`;
   }
   ridge += ` V${H} Z`;
@@ -114,46 +108,28 @@ function art(ctx: RenderCtx) {
     const xb = sx + (i - 11) * 150;
     return `<line x1="${sx + (i - 11) * 14}" y1="${H}" x2="${xb}" y2="1350"/>`;
   }).join("");
-  const slots = [
-    { x: 60 + rng() * 40, y: H - 212 + rng() * 40 },
-    { x: 905 + rng() * 40, y: H - 217 + rng() * 45 },
-  ];
-  const leftIsCritter = rng() < 0.5;
-  const s1 = leftIsCritter ? SPRITES.critter : SPRITES.stick;
-  const s2 = leftIsCritter ? SPRITES.stick : SPRITES.critter;
-  const coins = [
-    sprite(SPRITES.coin, Math.round(slots[0].x + 120 + rng() * 30), Math.round(slots[0].y + 10 + rng() * 30), 5, p.accent2, p.bg),
-    sprite(SPRITES.heart, Math.round(slots[1].x - 80 - rng() * 20), Math.round(slots[1].y + 20 + rng() * 30), 5, p.accent, p.accent),
-  ].join("");
   return `<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350">
     <defs>
       <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${p.bg}"/><stop offset="0.48" stop-color="${p.bg}"/><stop offset="${(H / 1350).toFixed(3)}" stop-color="${p.bg2}"/><stop offset="${(H / 1350).toFixed(3)}" stop-color="${p.bg}"/><stop offset="1" stop-color="${p.bg}"/></linearGradient>
-      <linearGradient id="sun" x1="0" y1="0" x2="0" y2="1"><stop offset="0.05" stop-color="${p.accent2}"/><stop offset="0.95" stop-color="${p.accent}"/></linearGradient>
       <radialGradient id="halo"><stop offset="0.45" stop-color="${p.accent}" stop-opacity="0.35"/><stop offset="1" stop-color="${p.accent}" stop-opacity="0"/></radialGradient>
       <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${p.bg2}" stop-opacity="0.9"/><stop offset="0.25" stop-color="${p.bg}" stop-opacity="0"/></linearGradient>
-      <mask id="sunMask"><rect width="1080" height="1350" fill="#fff"/>${cuts}</mask>
       <clipPath id="above"><rect width="1080" height="${H}"/></clipPath>
       <filter id="glow" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="5"/></filter>
-      ${GRAIN}
     </defs>
     <rect width="1080" height="1350" fill="url(#sky)"/>
     ${stars}
     <circle cx="${sx}" cy="${H - 20}" r="${sunR + 170}" fill="url(#halo)" clip-path="url(#above)"/>
-    <g clip-path="url(#above)"><circle cx="${sx}" cy="${H - 20}" r="${sunR}" fill="url(#sun)" mask="url(#sunMask)"/></g>
+    ${pixelSun(sx, H - 12, sunR, H, 12, p.accent2, p.accent)}
     <path d="${ridge}" fill="${p.bg}" fill-opacity="0.92"/>
     <path d="${ridge}" fill="none" stroke="${p.accent}" stroke-opacity="0.55" stroke-width="2"/>
     <g stroke="${p.accent}" stroke-width="6" stroke-opacity="0.35" filter="url(#glow)">${hLines}${vLines}</g>
     <g stroke="${p.accent}" stroke-width="2" stroke-opacity="0.9">${hLines}${vLines}</g>
     <rect y="${H}" width="1080" height="${floorH}" fill="url(#fade)"/>
     <rect y="${H - 2}" width="1080" height="4" fill="${p.accent}"/>
-    ${sprite(s1, Math.round(slots[0].x), Math.round(slots[0].y), 9, p.accent, p.accent2)}
-    ${sprite(s2, Math.round(slots[1].x), Math.round(slots[1].y), 9, p.accent, p.accent2)}
-    ${coins}
-    <rect width="1080" height="1350" fill="url(#gt)" opacity="0.1"/>
   </svg>`;
 }
 
-function PixLabel({ children, color, size = 14 }: { children: string; color: string; size?: number }) {
+function PixLabel({ children, color, size = 18 }: { children: string; color: string; size?: number }) {
   return <div style={{ display: "flex", fontFamily: "Pixel", fontSize: size, lineHeight: 1.4, color }}>{children}</div>;
 }
 
@@ -163,12 +139,13 @@ function render(ctx: RenderCtx) {
   const fit = { width: 920, max: 124, min: 52, k: 0.8 };
   const size = fitSize(title, { ...fit, maxLines: 3 });
   const threeLines = fitSize(title, { ...fit, maxLines: 2 }) < size;
-  const tagline = truncate(data.tagline, 46).toUpperCase();
+  const tagline = truncate(data.tagline, 100).toUpperCase();
   const highlights = data.highlights.slice(0, 4).map((h) => truncate(h, 20).toUpperCase());
   const collab = collabLine(data.houses).replace(/×/g, "X").toUpperCase();
   return (
     <Frame bg={p.bg}>
       <Art svg={art(ctx)} />
+      <Grain opacity={0.1} />
       <Layer style={{ padding: "60px 64px 60px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -176,8 +153,8 @@ function render(ctx: RenderCtx) {
             <PixLabel color={p.ink}>{collab}</PixLabel>
           </div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
-            <PixLabel color={p.accent2}>HI-SCORE</PixLabel>
-            <PixLabel color={p.ink}>IITM BS</PixLabel>
+            <PixLabel color={p.accent2}>IIT MADRAS</PixLabel>
+            <PixLabel color={p.ink}>BS DEGREE</PixLabel>
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: threeLines ? 320 : 380, gap: 24 }}>
@@ -198,7 +175,11 @@ function render(ctx: RenderCtx) {
           >
             {title}
           </div>
-          {tagline ? <PixLabel color={p.accent2} size={17}>{`> ${tagline}_`}</PixLabel> : null}
+          {tagline ? (
+            <div style={{ display: "flex", justifyContent: "center", textAlign: "center", fontFamily: "Pixel", fontSize: 18, lineHeight: 1.5, color: p.accent2, maxWidth: 940, textWrap: "balance" }}>
+              {`> ${tagline}_`}
+            </div>
+          ) : null}
         </div>
         <Spacer grow={1} />
         <div
@@ -253,9 +234,9 @@ function render(ctx: RenderCtx) {
           ) : null}
           <div style={{ display: "flex", height: 0, borderTop: `2px dashed ${rgba(p.accent, 0.55)}` }} />
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20 }}>
-            <LogoRows houses={data.houses} plate="#FFFDF8" ring={p.accent2} max={66} width={700} />
+            <Houses houses={data.houses} ring={p.accent2} ink={p.ink} muted={p.muted} />
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
-              <PixLabel color={p.muted} size={12}>PLAYERS</PixLabel>
+              <PixLabel color={p.muted}>PLAYERS</PixLabel>
               <PixLabel color={p.ink} size={22}>{String(data.houses.length).padStart(2, "0")}</PixLabel>
             </div>
           </div>
